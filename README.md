@@ -61,7 +61,7 @@ Alternatively, you can opt for **ONLYOFFICE Docs Cloud** which doesn't require d
 
 ## Plugin installation 📥
 
-To install the plugin, you will need Redmine version 4.2 or higher, or version 5.0 or higher. It is also important to note that the plugin is compatible with Ruby version 2.7.2 or higher, or 3.0.0 or higher. We recommend using Redmine 5 along with Ruby 3.
+To install the plugin, you will need Redmine version 4.2 or higher. It is also important to note that the plugin is compatible with Ruby version 2.7.2 or higher, or 3.0.0 or higher. We recommend using Redmine 7 along with Ruby 3.
 
 Additionally, you may need [zstd](https://github.com/facebook/zstd) to unzip the plugin.
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.2.0
+## Features
+- Support for Redmine 7.
+
+## Bug Fixes
+- Fixed an error when viewing an attachment that has no description.
+- Fixed an internal request without a valid JWT token returning `500` instead of `401`.
+- Fixed view templates not loading with Mustache 1.1.2 and later.
+
 ## Changed
 - demo server address changed
 
