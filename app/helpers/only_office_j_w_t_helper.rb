@@ -66,7 +66,7 @@ module OnlyOfficeJWTHelper
       else
         raise OnlyOfficeRedmine::Error.unauthorized
       end
-    rescue JWT::DecodeError
+    rescue JWT::DecodeError, ArgumentError, KeyError, TypeError
       raise OnlyOfficeRedmine::Error.unauthorized
     end
 
@@ -98,7 +98,7 @@ module OnlyOfficeJWTHelper
 
     begin
       url = jwt.decode_url(ac.request.url)
-    rescue JWT::DecodeError
+    rescue JWT::DecodeError, ArgumentError, KeyError, TypeError
       raise OnlyOfficeRedmine::Error.unauthorized
     end
 

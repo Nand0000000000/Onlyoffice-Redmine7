@@ -21,7 +21,7 @@ class Views::OnlyOffice::Convert < Views::Mustache
   extend T::Sig
   include Blocks::Assets
 
-  self.template_file = "#{template_path}/onlyoffice/convert.mustache"
+  self.template_file = File.join(template_path, "onlyoffice/convert.mustache")
 
   sig { returns(String) }
   attr_accessor :title

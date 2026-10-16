@@ -29,7 +29,10 @@ module OnlyOfficeErrorHelper
     when OnlyOfficeRedmine::Error.not_found
       render_404
     when OnlyOfficeRedmine::Error.unauthorized
-      raise Unauthorized
+      # Raising `Unauthorized` here isn't picked up by Redmine's
+      # `rescue_from Unauthorized` (an exception raised inside a
+      # `rescue_from` handler is not re-dispatched), so respond explicitly.
+      render_error({ message: OnlyOfficeRedmine::Error.unauthorized.message, status: 401 })
     when OnlyOfficeRedmine::Error.forbidden
       render_403
     when OnlyOfficeRedmine::Error.unsupported

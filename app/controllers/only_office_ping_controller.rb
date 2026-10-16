@@ -21,12 +21,14 @@ class OnlyOfficePingController < ApplicationController
   include OnlyOfficePluginHelper::Regular
   include OnlyOfficeSettingsHelper
   include OnlyOfficeJWTHelper
+  include OnlyOfficeErrorHelper
 
   before_action      :require_onlyoffice_plugin
   before_action      :check_trial
   skip_before_action :verify_authenticity_token
   before_action      :verify_jwt_token
 
+  rescue_from OnlyOfficeRedmine::Error,         with: :handle_error
   rescue_from OnlyOfficeRedmine::SettingsError, with: :handle_settings_error
 
   # ```http

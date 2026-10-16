@@ -23,5 +23,5 @@ class Views::Issues::Show < Views::Mustache
   include Blocks::Assets
   include Blocks::Attachments
 
-  self.template_file = "#{template_path}/issues/show.mustache"
+  self.template_file = File.join(template_path, "issues/show.mustache")
 end

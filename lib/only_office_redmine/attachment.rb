@@ -77,7 +77,7 @@ module OnlyOfficeRedmine
 
     sig { returns(String) }
     def description
-      @attachment.description
+      @attachment.description.to_s
     end
 
     sig { returns(T.nilable(String)) }

@@ -24,5 +24,5 @@ class Views::Documents::Show < Views::Mustache
   include Blocks::Attachments
   include Blocks::New::Anchor
 
-  self.template_file = "#{template_path}/documents/show.mustache"
+  self.template_file = File.join(template_path, "documents/show.mustache")
 end

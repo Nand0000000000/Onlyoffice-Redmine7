@@ -27,5 +27,5 @@ class Views::Attachments::Show < Views::Mustache
   include Blocks::Edit::Contextual
   include Blocks::Convert::Contextual
 
-  self.template_file = "#{template_path}/attachments/show.mustache"
+  self.template_file = File.join(template_path, "attachments/show.mustache")
 end
