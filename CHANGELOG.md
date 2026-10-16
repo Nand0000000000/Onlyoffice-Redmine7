@@ -8,6 +8,8 @@
 - Fixed an error when viewing an attachment that has no description.
 - Fixed an internal request without a valid JWT token returning `500` instead of `401`.
 - Fixed view templates not loading with Mustache 1.1.2 and later.
+- Fixed the requests which save the edited documents being unable to read the
+  JWT payload, which made the plugin reject every save from the editor.
 
 ## Changed
 - demo server address changed

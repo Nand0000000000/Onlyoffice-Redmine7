@@ -78,6 +78,11 @@ module OnlyOfficeJWTHelper
     decoded_input = StringIO.new(payload)
 
     ac.request.set_header("CONTENT_LENGTH", content_length)
+    # The controller reads the decoded payload with `request.body`. It can't be
+    # served from `rack.input` alone: Rails caches the raw body in
+    # `RAW_POST_DATA` while parsing the request parameters, which happens before
+    # the filters run, and `ActionDispatch::Request#body` prefers that cache.
+    ac.request.set_header("RAW_POST_DATA", payload)
     ac.request.set_header("rack.input", decoded_input)
   end
 
