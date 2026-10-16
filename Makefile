@@ -23,8 +23,6 @@ build: # Build the plugin.
 		db \
 		lib \
 		lib2 \
-		licenses \
-		3rd-Party.license \
 		AUTHORS.md \
 		CHANGELOG.md \
 		init.rb \
