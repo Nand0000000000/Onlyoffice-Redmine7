@@ -1040,7 +1040,9 @@ class OnlyOfficeAttachmentsController < ApplicationController
         raise OnlyOfficeRedmine::Error.internal
       end
 
-      file_url = settings.document_server.resolve_internal_url(file_url)
+      # The URL is opened by the browser, so it must point to the public address
+      # of the Document Server rather than to the internal one.
+      file_url = settings.document_server.resolve_url(file_url)
       flash[:notice] = I18n.t("notice_successful_create")
       return render(json: { url: file_url })
     rescue OnlyOfficeRedmine::Error

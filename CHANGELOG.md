@@ -10,6 +10,8 @@
 - Fixed view templates not loading with Mustache 1.1.2 and later.
 - Fixed the requests which save the edited documents being unable to read the
   JWT payload, which made the plugin reject every save from the editor.
+- Fixed the link returned by "Download as" pointing to the internal Document
+  Server address, which is unreachable from the browser.
 
 ## Changed
 - demo server address changed
