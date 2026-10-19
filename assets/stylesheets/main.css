@@ -268,3 +268,245 @@ limitations under the License.
   fill: #505050;
   margin-left: 6px;
 }
+
+/* Block Editor */
+
+.onlyoffice-blocks {
+  margin: 0 auto;
+  max-width: 860px;
+  padding: 8px 0 48px;
+}
+
+.onlyoffice-blocks__header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 12px;
+}
+
+.onlyoffice-blocks__title {
+  color: #505050;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.onlyoffice-blocks__actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.onlyoffice-blocks__status {
+  color: #555F65;
+  font-size: 12px;
+}
+
+.onlyoffice-blocks__status--error {
+  color: #B00020;
+}
+
+.onlyoffice-blocks__button {
+  background: #505050;
+  border: 1px solid #505050;
+  border-radius: 4px;
+  color: #FFFFFF;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 6px 14px;
+  text-decoration: none;
+}
+
+.onlyoffice-blocks__button:link,
+.onlyoffice-blocks__button:visited,
+.onlyoffice-blocks__button:hover {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+.onlyoffice-blocks__button:hover {
+  background: #3F3F3F;
+}
+
+.onlyoffice-blocks__button--secondary {
+  background: #FFFFFF;
+  border-color: #D0D4D7;
+  color: #505050;
+}
+
+.onlyoffice-blocks__button--secondary:link,
+.onlyoffice-blocks__button--secondary:visited,
+.onlyoffice-blocks__button--secondary:hover {
+  color: #505050;
+}
+
+.onlyoffice-blocks__button--secondary:hover {
+  background: #F2F4F5;
+}
+
+.onlyoffice-blocks__warning {
+  background: #FFF8E1;
+  border: 1px solid #F0E0A8;
+  border-radius: 4px;
+  color: #6B5900;
+  font-size: 13px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+}
+
+.onlyoffice-blocks__toolbar {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E4E4E4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.onlyoffice-blocks__group {
+  border-right: 1px solid #E4E4E4;
+  display: flex;
+  gap: 2px;
+  padding-right: 8px;
+}
+
+.onlyoffice-blocks__group:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.onlyoffice-blocks__tool {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #505050;
+  cursor: pointer;
+  font-size: 13px;
+  min-width: 28px;
+  padding: 4px 6px;
+}
+
+.onlyoffice-blocks__tool:focus-visible,
+.onlyoffice-blocks__tool:hover {
+  background: #F2F4F5;
+}
+
+.onlyoffice-blocks__surface {
+  padding-top: 16px;
+}
+
+.onlyoffice-blocks__block {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.onlyoffice-blocks__block--dragging {
+  opacity: 0.4;
+}
+
+.onlyoffice-blocks__block--over {
+  box-shadow: 0 -2px 0 #1C8CE3;
+}
+
+.onlyoffice-blocks__handle {
+  background: none;
+  border: none;
+  color: #C4C9CC;
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0;
+  padding: 0 2px;
+}
+
+.onlyoffice-blocks__block:focus-within > .onlyoffice-blocks__handle,
+.onlyoffice-blocks__block:hover > .onlyoffice-blocks__handle,
+.onlyoffice-blocks__handle:focus-visible {
+  opacity: 1;
+}
+
+.onlyoffice-blocks__body {
+  color: #303030;
+  flex: 1;
+  line-height: 1.6;
+  min-width: 0;
+  outline: none;
+  overflow-wrap: break-word;
+}
+
+.onlyoffice-blocks__body:empty::before {
+  color: #A0A6AA;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.onlyoffice-blocks__block[data-type='heading1'] .onlyoffice-blocks__body {
+  color: #303030;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 12px 0 4px;
+}
+
+.onlyoffice-blocks__block[data-type='heading2'] .onlyoffice-blocks__body {
+  color: #303030;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 8px 0 2px;
+}
+
+.onlyoffice-blocks__block[data-type='heading3'] .onlyoffice-blocks__body {
+  color: #303030;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.onlyoffice-blocks__block[data-type='quote'] .onlyoffice-blocks__body {
+  border-left: 3px solid #D0D4D7;
+  color: #555F65;
+  padding-left: 12px;
+}
+
+.onlyoffice-blocks__block[data-type='quote'] .onlyoffice-blocks__body {
+  color: #555F65;
+}
+
+.onlyoffice-blocks__block--checked .onlyoffice-blocks__body {
+  color: #9AA0A4;
+  text-decoration: line-through;
+}
+
+.onlyoffice-blocks__checkbox {
+  margin-top: 7px;
+}
+
+.onlyoffice-blocks__marker {
+  color: #555F65;
+  line-height: 1.6;
+  min-width: 14px;
+  text-align: right;
+}
+
+.onlyoffice-blocks__code {
+  background: #F6F7F8;
+  border-radius: 4px;
+  font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  padding: 8px 12px;
+  white-space: pre-wrap;
+}
+
+.onlyoffice-blocks__divider {
+  border: none;
+  border-top: 1px solid #E4E4E4;
+  flex: 1;
+  margin: 12px 0;
+}
+

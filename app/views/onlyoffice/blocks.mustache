@@ -1,0 +1,59 @@
+<!--
+(c) Copyright Ascensio System SIA 2025
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<div class="onlyoffice-blocks" data-labels="{{ labels }}" data-save-url="{{ save.url }}">
+  <div class="onlyoffice-blocks__header">
+    <h2 class="onlyoffice-blocks__title">{{ basename }}</h2>
+    <div class="onlyoffice-blocks__actions">
+      <span class="onlyoffice-blocks__status" data-status role="status"></span>
+      <button class="onlyoffice-blocks__button" data-action="save" type="button">{{ save.label }}</button>
+      <a class="onlyoffice-blocks__button onlyoffice-blocks__button--secondary" href="{{ cancel.url }}">{{ cancel.label }}</a>
+    </div>
+  </div>
+
+  {{# convertible }}
+  <p class="onlyoffice-blocks__warning">{{ warning }}</p>
+  {{/ convertible }}
+
+  <div class="onlyoffice-blocks__toolbar" role="toolbar">
+    <div class="onlyoffice-blocks__group">
+      <button class="onlyoffice-blocks__tool" data-type="paragraph" title="Text" type="button">¶</button>
+      <button class="onlyoffice-blocks__tool" data-type="heading1" title="Heading 1" type="button">H1</button>
+      <button class="onlyoffice-blocks__tool" data-type="heading2" title="Heading 2" type="button">H2</button>
+      <button class="onlyoffice-blocks__tool" data-type="heading3" title="Heading 3" type="button">H3</button>
+    </div>
+    <div class="onlyoffice-blocks__group">
+      <button class="onlyoffice-blocks__tool" data-inline="bold" title="Bold" type="button"><strong>B</strong></button>
+      <button class="onlyoffice-blocks__tool" data-inline="italic" title="Italic" type="button"><em>I</em></button>
+      <button class="onlyoffice-blocks__tool" data-inline="strike" title="Strikethrough" type="button"><s>S</s></button>
+      <button class="onlyoffice-blocks__tool" data-inline="code" title="Code" type="button">`c`</button>
+      <button class="onlyoffice-blocks__tool" data-inline="link" title="Link" type="button">🔗</button>
+    </div>
+    <div class="onlyoffice-blocks__group">
+      <button class="onlyoffice-blocks__tool" data-type="bulleted" title="Bulleted list" type="button">•</button>
+      <button class="onlyoffice-blocks__tool" data-type="numbered" title="Numbered list" type="button">1.</button>
+      <button class="onlyoffice-blocks__tool" data-type="todo" title="To-do list" type="button">☑</button>
+      <button class="onlyoffice-blocks__tool" data-type="quote" title="Quote" type="button">❝</button>
+      <button class="onlyoffice-blocks__tool" data-type="code" title="Code block" type="button">{ }</button>
+      <button class="onlyoffice-blocks__tool" data-type="divider" title="Divider" type="button">—</button>
+    </div>
+  </div>
+
+  <div class="onlyoffice-blocks__surface">
+    <textarea class="onlyoffice-blocks__source" data-source hidden>{{ content }}</textarea>
+    <div class="onlyoffice-blocks__content" data-blocks></div>
+  </div>
+</div>

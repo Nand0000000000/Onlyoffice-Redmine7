@@ -23,6 +23,7 @@ module OnlyOfficeRedmine
   end
 
   class AdditionalSettings < T::Struct
+    prop :editor_paradigm, String, default: "onlyoffice"
     prop :fallback_jwt, OnlyOffice::Config::JWT, default: OnlyOffice::Config::JWT.new
   end
 
@@ -33,6 +34,7 @@ module OnlyOfficeRedmine
     prop :editor_feedback_enabled,       String,           default: "", name: "editor_feedback"
     prop :editor_force_save_enabled,     String,           default: "", name: "forcesave"
     prop :editor_help_enabled,           String,           default: "", name: "editor_help"
+    prop :editor_paradigm,               String,           default: ""
     prop :editor_toolbar_tabs_disabled,  String,           default: "", name: "editor_toolbar_no_tabs"
     prop :formats_editable,              T::Array[String], default: []
     prop :ssl_verification_disabled,     String,           default: "", name: "check_cert"
@@ -52,6 +54,11 @@ module OnlyOfficeRedmine
     extend T::Sig
 
     NAME = "plugin_#{OnlyOfficeRedmine::NAME}".freeze
+
+    # The ways to edit the text documents. The `onlyoffice` paradigm hands the
+    # documents over to the ONLYOFFICE Docs editor, while the `blocks` one uses
+    # the plugin's own block editor, which stores the documents as Markdown.
+    EditorParadigms = T.let(["onlyoffice", "blocks"].freeze, T::Array[String])
 
     sig { returns(Settings) }
     def self.current
@@ -91,6 +98,18 @@ module OnlyOfficeRedmine
     sig { returns(OnlyOffice::Config::Formats) }
     def formats
       @general.formats
+    end
+
+    sig { returns(String) }
+    def editor_paradigm
+      @additional.editor_paradigm
+    end
+
+    # Whether the text documents are edited with the plugin's block editor
+    # instead of the ONLYOFFICE Docs editor.
+    sig { returns(T::Boolean) }
+    def blocks_editor?
+      editor_paradigm == "blocks"
     end
 
     sig { returns(OnlyOffice::Config::SSL) }
@@ -298,7 +317,10 @@ module OnlyOfficeRedmine
 
     sig { returns(AdditionalSettings) }
     def copy
-      self.class.new(fallback_jwt: fallback_jwt.dup)
+      self.class.new(
+        editor_paradigm: editor_paradigm,
+        fallback_jwt: fallback_jwt.dup
+      )
     end
 
     class << self
@@ -361,6 +383,7 @@ module OnlyOfficeRedmine
       internal.editor_feedback_enabled       = map_bool(settings.editor.feedback_enabled)
       internal.editor_force_save_enabled     = map_bool(settings.editor.force_save_enabled)
       internal.editor_help_enabled           = map_bool(settings.editor.help_enabled)
+      internal.editor_paradigm               = settings.editor_paradigm
       internal.editor_toolbar_tabs_disabled  = map_bool(settings.editor.toolbar_tabs_disabled)
 
       internal.formats_editable = settings.formats.editable
@@ -441,6 +464,13 @@ module OnlyOfficeRedmine
       general.trial.enabled_at = trial_enabled_at
 
       additional = AdditionalSettings.new
+
+      additional.editor_paradigm =
+        if Settings::EditorParadigms.include?(editor_paradigm)
+          editor_paradigm
+        else
+          "onlyoffice"
+        end
 
       additional.fallback_jwt.secret = fallback_jwt_secret
       additional.fallback_jwt.algorithm = fallback_jwt_algorithm

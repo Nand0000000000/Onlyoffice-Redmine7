@@ -131,6 +131,11 @@ And finally, restart Redmine. Read more about the plugin installation on the Red
 - Display Help menu button.
 - Display monochrome toolbar header.
 
+### Text editing
+
+- Editing paradigm. \
+  The way the text documents are edited. The "ONLYOFFICE Docs" paradigm opens them in the ONLYOFFICE editor, while the "Block editor" one opens them in the plugin's own block editor, which is similar to Notion and works with the Markdown representation of the document. The documents of the word processing formats (DOCX, ODT, RTF, TXT, and others) are converted to Markdown when they are opened and back to their format when they are saved, so a part of the formatting may be lost.
+
 ### Formats
 
 - Specify the list of formats allowed to be opened directly for editing.
@@ -170,6 +175,12 @@ On the Documents page, users can open the attachment to view, edit, create, or c
 </details>
 
 On the Attachment page, users can open the attachment to view, edit, or convert it. The options displayed in the interface may vary depending on the user's permissions for the module where the attachment is located.
+
+### Block editor
+
+The block editor is an alternative to the ONLYOFFICE editor for the text documents. It is enabled with the [editing paradigm](#text-editing) option of the plugin settings and replaces the "Edit" link of the text attachments.
+
+The editor works with the Markdown representation of a document: the attachment is parsed into blocks (headings, paragraphs, lists, to-do lists, quotes, code blocks, and dividers) when the editor is opened and written back to the file when it is saved. The types of the blocks can be changed with the toolbar, the Markdown shortcuts (`# `, `- `, `1. `, `> `, and the triple backtick), or the inline formatting of the block. The documents of the word processing formats are converted to Markdown by ONLYOFFICE Docs when they are opened and back to their format when they are saved, so a part of the formatting may be lost.
 
 ### Files
 

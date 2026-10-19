@@ -74,6 +74,7 @@ end
 class Views::Select < T::Struct
   prop :label,   String,                  default: ""
   prop :name,    String,                  default: ""
+  prop :note,    String,                  default: ""
   prop :options, T::Array[Views::Option], default: []
 end
 
@@ -96,6 +97,7 @@ module Views::News; end
 require_relative "news/show"
 
 module Views::OnlyOffice; end
+require_relative "onlyoffice/blocks"
 require_relative "onlyoffice/convert"
 require_relative "onlyoffice/editor"
 require_relative "onlyoffice/new"

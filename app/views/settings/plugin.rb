@@ -38,6 +38,12 @@ class Views::Settings::Plugin < Views::Mustache
   sig { returns(String) }
   attr_accessor :editor_legend
 
+  sig { returns(String) }
+  attr_accessor :editor_paradigm_legend
+
+  sig { returns(Views::Select) }
+  attr_accessor :editor_paradigm
+
   sig { returns(Views::Input) }
   attr_accessor :document_server_url
 
@@ -95,6 +101,12 @@ class Views::Settings::Plugin < Views::Mustache
 
     editor_legend = I18n.t("onlyoffice_settings_editor_view")
     @editor_legend = T.let(editor_legend, String)
+
+    editor_paradigm_legend = I18n.t("onlyoffice_settings_paradigm_legend")
+    @editor_paradigm_legend = T.let(editor_paradigm_legend, String)
+
+    editor_paradigm = Views::Select.new
+    @editor_paradigm = T.let(editor_paradigm, Views::Select)
 
     document_server_url = Views::Input.new
     document_server_url.label = I18n.t("onlyoffice_settings_doc_url")

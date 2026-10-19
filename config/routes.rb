@@ -27,10 +27,15 @@ get  "onlyoffice/attachments/:attachment_id/view",                          to: 
 get  "onlyoffice/attachments/:attachment_id/edit",                          to: "only_office_attachments#edit",        as: "onlyoffice_edit_attachment"
 get  "onlyoffice/attachments/:attachment_id/download",                      to: "only_office_attachments#download",    as: "onlyoffice_raw_download_attachment"
 get  "onlyoffice/attachments/:attachment_id/convert",                       to: "only_office_attachments#convert",     as: "onlyoffice_convert_attachment"
+get  "onlyoffice/attachments/:attachment_id/blocks",                        to: "only_office_attachments#blocks",      as: "onlyoffice_edit_blocks_attachment"
+post "onlyoffice/attachments/:attachment_id/blocks/save",                   to: "only_office_attachments#blocks_save", as: "onlyoffice_save_blocks_attachment"
 post "onlyoffice/attachments/:attachment_id/save-as",                       to: "only_office_attachments#save_as",     as: "onlyoffice_save_as_attachment"
 post "onlyoffice/attachments/:attachment_id/download-as",                   to: "only_office_attachments#download_as", as: "onlyoffice_download_as_attachment"
 post "onlyoffice/attachments/:attachment_id/retrieve",                      to: "only_office_attachments#retrieve",    as: "onlyoffice_raw_retrieve_attachment"
 post "onlyoffice/attachments/:attachment_id/callback",                      to: "only_office_attachments#callback",    as: "onlyoffice_raw_callback_attachment"
+
+# Block editor
+get "onlyoffice/blocks/:pending_id/source", to: "only_office_attachments#blocks_source", as: "onlyoffice_blocks_source"
 
 # Ping
 get  "onlyoffice/ping", to: "only_office_ping#index", as: "onlyoffice_ping"

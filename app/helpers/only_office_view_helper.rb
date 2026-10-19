@@ -84,7 +84,9 @@ module OnlyOfficeViewHelper
         return block
       end
 
-      if attachment.editable?(user) || attachment.fillable?(user)
+      if blocks_editor? && attachment.markdown_editable?(user)
+        block.edit_url = helpers.onlyoffice_edit_blocks_attachment_path(attachment.id)
+      elsif attachment.editable?(user) || attachment.fillable?(user)
         block.edit_url = helpers.onlyoffice_edit_attachment_path(attachment.id)
       elsif attachment.viewable?(user)
         block.view_url = helpers.onlyoffice_view_attachment_path(attachment.id)
@@ -95,6 +97,11 @@ module OnlyOfficeViewHelper
       end
 
       block
+    end
+
+    sig { returns(T::Boolean) }
+    private def blocks_editor?
+      OnlyOfficeRedmine::Settings.current.blocks_editor?
     end
   end
 end

@@ -61,6 +61,20 @@ limitations under the License.
   </div>
   <div class="onlyoffice-settings__editor">
     <fieldset class="box tabular settings">
+      <legend>{{ editor_paradigm_legend }}</legend>
+      <p>
+        <label for="onlyoffice-editor-paradigm">{{ editor_paradigm.label }}</label>
+        <select id="onlyoffice-editor-paradigm" name="{{ editor_paradigm.name }}">
+          {{# editor_paradigm.options }}
+          <option value="{{ value }}" {{# selected }} selected {{/ selected }}>{{ label }}</option>
+          {{/ editor_paradigm.options }}
+        </select>
+        <em class="info">{{ editor_paradigm.note }}</em>
+      </p>
+    </fieldset>
+  </div>
+  <div class="onlyoffice-settings__editor">
+    <fieldset class="box tabular settings">
       <legend>{{ editor_legend }}</legend>
       <label class="block">
         <input name="{{ editor_chat_enabled.name }}" type="checkbox" value="{{ editor_chat_enabled.value }}" {{# editor_chat_enabled.checked }} checked {{/ editor_chat_enabled.checked }}>

@@ -2,6 +2,11 @@
 
 ## 3.2.0
 ## Features
+- A block editor for the text documents, which looks like Notion and works with
+  their Markdown representation. It is enabled with the "Text editing" option of
+  the plugin settings and replaces the ONLYOFFICE editor for the text
+  documents. The documents of the word processing formats are converted to
+  Markdown when they are opened and back to their format when they are saved.
 - Rendering of the Mermaid diagrams attached as `.mmd` or `.mermaid` files.
 - Support for the Markdown (`.md`) format, including the conversion of the text
   documents to Markdown. It requires ONLYOFFICE Docs 9.3 or later.

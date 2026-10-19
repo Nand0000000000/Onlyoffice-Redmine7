@@ -165,6 +165,47 @@ module OnlyOfficeRedmine
         format.renderable?
     end
 
+    # The formats which the block editor edits as Markdown.
+    #
+    # The documents of the other word processing formats are converted to
+    # Markdown when they are opened and back to their format when they are
+    # saved.
+    MarkdownEditable = T.let(
+      [
+        "doc",
+        "docm",
+        "docx",
+        "dot",
+        "dotm",
+        "dotx",
+        "fodt",
+        "hwp",
+        "hwpx",
+        "md",
+        "odt",
+        "ott",
+        "rtf",
+        "stw",
+        "sxw",
+        "txt",
+        "wps",
+        "wpt"
+      ].freeze,
+      T::Array[String]
+    )
+
+    # Whether the attachment can be edited with the block editor, which works
+    # with the Markdown representation of the document.
+    sig { params(user: User).returns(T::Boolean) }
+    def markdown_editable?(user)
+      format = self.format
+      unless format
+        return false
+      end
+      @attachment.editable?(user.internal) &&
+        MarkdownEditable.include?(format.name)
+    end
+
     # The content of the attachment, which is rendered by the plugin itself.
     #
     # Only the beginning of the file is read, as a diagram can't be that large.
@@ -175,6 +216,13 @@ module OnlyOfficeRedmine
       unless data
         return ""
       end
+      data.force_encoding(Encoding::UTF_8).scrub
+    end
+
+    # The whole content of the attachment as UTF-8 text.
+    sig { returns(String) }
+    def text
+      data = File.binread(@attachment.diskfile)
       data.force_encoding(Encoding::UTF_8).scrub
     end
 

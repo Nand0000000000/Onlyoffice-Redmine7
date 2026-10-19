@@ -44,6 +44,21 @@ module Blocks::Assets
       "<% end %>"
   end
 
+  # The styles and scripts which are used only by the block editor.
+  sig { returns(String) }
+  def blocks_scripts
+    javascript_include_tag("blocks")
+  end
+
+  sig { returns(String) }
+  def blocks_raw_assets
+    "<% content_for(:header_tags) do %>" \
+      "#{plugin_styles}" \
+      "#{plugin_scripts}" \
+      "#{blocks_scripts}" \
+      "<% end %>"
+  end
+
   sig { returns(String) }
   def plugin_styles
     helpers_stylesheet_link_tag("main")

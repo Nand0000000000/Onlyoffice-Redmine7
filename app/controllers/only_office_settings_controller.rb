@@ -81,6 +81,24 @@ class OnlyOfficeSettingsController < ApplicationController
     view.editor_toolbar_tabs_disabled.value = "1"
     view.editor_toolbar_tabs_disabled.checked = settings.editor.toolbar_tabs_disabled
 
+    view.editor_paradigm_legend = I18n.t("onlyoffice_settings_paradigm_legend")
+
+    view.editor_paradigm.name = "onlyoffice[editor_paradigm]"
+    view.editor_paradigm.label = I18n.t("onlyoffice_settings_paradigm")
+    view.editor_paradigm.note = I18n.t("onlyoffice_settings_paradigm_note")
+    view.editor_paradigm.options = [
+      Views::Option.new(
+        label: I18n.t("onlyoffice_settings_paradigm_onlyoffice"),
+        value: "onlyoffice",
+        selected: settings.editor_paradigm == "onlyoffice"
+      ),
+      Views::Option.new(
+        label: I18n.t("onlyoffice_settings_paradigm_blocks"),
+        value: "blocks",
+        selected: settings.editor_paradigm == "blocks"
+      )
+    ]
+
     formats = OnlyOffice::Resources::Formats.read
 
     view.formats_editable.options = formats.lossy_editable.sort_by(&:name).map do |format|
@@ -111,6 +129,7 @@ class OnlyOfficeSettingsController < ApplicationController
     prop :editor_compact_header_enabled, String,           default: "0"
     prop :editor_feedback_enabled,       String,           default: "0"
     prop :editor_help_enabled,           String,           default: "0"
+    prop :editor_paradigm,               String,           default: "onlyoffice"
     prop :editor_toolbar_tabs_disabled,  String,           default: "0"
     prop :formats_editable,              T::Array[String], default: []
     prop :ssl_verification_disabled,     String,           default: "0"
@@ -223,6 +242,7 @@ class OnlyOfficeSettingsController < ApplicationController
       general.trial.period = current.trial.period
 
       additional = OnlyOfficeRedmine::AdditionalSettings.new
+      additional.editor_paradigm = editor_paradigm
       additional.fallback_jwt = current.fallback_jwt
 
       if general.trial.enabled
