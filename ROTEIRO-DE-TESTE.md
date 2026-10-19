@@ -24,6 +24,7 @@ Caminhos:
 | O quê | Onde |
 | ----- | ---- |
 | Fonte do plugin | `C:\ProjetosUSA\PluginRedmine\onlyoffice-redmine` |
+| Código publicado no GitHub | `plugin/` no repositório `Onlyoffice-Redmine7` — importado por `git subtree`, com o histórico do plugin; `onlyoffice-redmine/` é a cópia de trabalho local |
 | Stack de teste (compose + scripts) | `C:\Users\Fernando\AppData\Local\Temp\opencode\rm7` |
 | Artefato montado no container | `...\rm7\plugin` — **não** é a pasta do fonte |
 
