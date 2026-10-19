@@ -29,6 +29,7 @@ es:
   onlyoffice_editor_forms_error_version: "Por favor, actualice ONLYOFFICE Docs a la versión 7.0 para poder trabajar con formularios rellenables en línea."
   onlyoffice_create_dropdown: "Crear en ONLYOFFICE"
   onlyoffice_convert_dropdown: "Convertir con ONLYOFFICE"
+  onlyoffice_diagram_source: "Código del diagrama"
   onlyoffice_create_docx: "Documento"
   onlyoffice_create_xlsx: "Libro de Excel"
   onlyoffice_create_pptx: "Presentación"

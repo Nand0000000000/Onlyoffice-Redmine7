@@ -41,13 +41,15 @@ class OnlyOfficeAttachmentsController < ApplicationController
     view = Views::Attachments::Show.new(helpers: helpers)
 
     block = setup_link_to_attachment(helpers, user, attachment)
-    unless block.sense?
+    diagram = diagram_content(attachment, user)
+    unless block.sense? || diagram
       return ""
     end
 
     view.view_url = block.view_url
     view.edit_url = block.edit_url
     view.convert_url = block.convert_url
+    view.diagram = diagram
 
     if Redmine::VERSION::MAJOR == 6
       view.view_icon = helpers.sprite_icon("edit", view.view_label)
@@ -56,7 +58,43 @@ class OnlyOfficeAttachmentsController < ApplicationController
     end
 
     view.setup_assets
+    if diagram
+      view.setup_diagram_assets
+    end
     view.inline
+  end
+
+  # The content of the attachments which are rendered by the plugin, for
+  # example the Mermaid diagrams. It's `nil` for the formats which are handled
+  # by the Document Server.
+  sig do
+    params(
+      attachment: ::Attachment,
+      user: OnlyOfficeRedmine::User
+    )
+      .returns(T.nilable(String))
+  end
+  private_class_method def self.diagram_content(attachment, user)
+    wrapped = OnlyOfficeRedmine::Attachment.new(attachment: attachment)
+    unless wrapped.renderable?(user)
+      return nil
+    end
+
+    content = wrapped.content
+    if content.strip.empty?
+      return nil
+    end
+
+    content
+  end
+
+  # Whether the attachment is rendered by the plugin itself, rather than by the
+  # Document Server. Such attachments have a preview, so Redmine shouldn't tell
+  # the user that it's unavailable.
+  sig { params(attachment: ::Attachment).returns(T::Boolean) }
+  def self.renderable_attachment?(attachment)
+    wrapped = OnlyOfficeRedmine::Attachment.new(attachment: attachment)
+    wrapped.renderable?(OnlyOfficeRedmine::User.current)
   end
 
   # ```http

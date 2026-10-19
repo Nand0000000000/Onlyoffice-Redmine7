@@ -28,4 +28,18 @@ class Views::Attachments::Show < Views::Mustache
   include Blocks::Convert::Contextual
 
   self.template_file = File.join(template_path, "attachments/show.mustache")
+
+  # The Mermaid source of the attachment, if it's rendered by the plugin.
+  sig { returns(T.nilable(String)) }
+  attr_accessor :diagram
+
+  sig { void }
+  def setup_diagram_assets
+    setup_scripts(["mermaid.min"])
+  end
+
+  sig { returns(String) }
+  def source_label
+    I18n.t("onlyoffice_diagram_source")
+  end
 end

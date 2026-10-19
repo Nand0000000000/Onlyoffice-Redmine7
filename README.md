@@ -25,6 +25,7 @@ Find out more details [here](https://api.onlyoffice.com/docs/docs-api/get-starte
 - Mobile view for licensed editors.
 - Creating new attachments using templates that consider the user's language preference.
 - Converting attachments and saving or downloading them.
+- Rendering the Mermaid diagrams attached as `.mmd` or `.mermaid` files.
 
 <p align="center">
   <a href="https://www.onlyoffice.com/office-for-redmine">
@@ -44,6 +45,8 @@ Find out more details [here](https://api.onlyoffice.com/docs/docs-api/get-starte
 <!-- end-formats -->
 
 \* To be able to open the format for editing, check it in the [formats settings](#formats). Due to some format restrictions, data loss may occur.
+
+The `mmd` and `mermaid` files are not handled by ONLYOFFICE Docs: the plugin renders them as diagrams with the bundled [Mermaid](https://mermaid.js.org/) library, which is distributed under the MIT license.
 
 ## Installing ONLYOFFICE Docs
 

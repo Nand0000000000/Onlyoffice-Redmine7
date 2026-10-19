@@ -29,6 +29,7 @@ it:
   onlyoffice_editor_forms_error_version: "Si prega di aggiornare ONLYOFFICE Docs alla versione 7.0 per lavorare su moduli compilabili online."
   onlyoffice_create_dropdown: "Creare in ONLYOFFICE"
   onlyoffice_convert_dropdown: "Converti con ONLYOFFICE"
+  onlyoffice_diagram_source: "Codice del diagramma"
   onlyoffice_create_docx: "Documento"
   onlyoffice_create_xlsx: "Foglio di calcolo"
   onlyoffice_create_pptx: "Presentazione"

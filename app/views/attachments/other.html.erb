@@ -14,5 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 %>
 
+<% if OnlyOfficeAttachmentsController.renderable_attachment?(@attachment) %>
+<%= render(:layout => "layouts/file") do %>
+<%= OnlyOfficeAttachmentsController.show_attachment(self, @attachment) %>
+<% end %>
+<% else %>
 <%= render(:parent) %>
 <%= OnlyOfficeAttachmentsController.show_attachment(self, @attachment) %>
+<% end %>

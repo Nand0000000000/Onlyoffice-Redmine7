@@ -29,6 +29,13 @@ module Blocks::Assets
     helpers.content_for(:header_tags, plugin_scripts)
   end
 
+  sig { params(sources: T::Array[String]).void }
+  def setup_scripts(sources)
+    sources.each do |source|
+      helpers.content_for(:header_tags, javascript_include_tag(source))
+    end
+  end
+
   sig { returns(String) }
   def raw_assets
     "<% content_for(:header_tags) do %>" \

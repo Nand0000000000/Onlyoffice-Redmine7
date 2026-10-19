@@ -156,6 +156,29 @@ module OnlyOfficeRedmine
     end
 
     sig { params(user: User).returns(T::Boolean) }
+    def renderable?(user)
+      format = self.format
+      unless format
+        return false
+      end
+      @attachment.visible?(user.internal) &&
+        format.renderable?
+    end
+
+    # The content of the attachment, which is rendered by the plugin itself.
+    #
+    # Only the beginning of the file is read, as a diagram can't be that large.
+    sig { returns(String) }
+    def content
+      limit = 1024 * 1024
+      data = File.open(@attachment.diskfile, "rb") { |file| file.read(limit) }
+      unless data
+        return ""
+      end
+      data.force_encoding(Encoding::UTF_8).scrub
+    end
+
+    sig { params(user: User).returns(T::Boolean) }
     def convertible?(user)
       format = self.format
       unless format

@@ -29,6 +29,7 @@ zh:
   onlyoffice_editor_forms_error_version: "请将ONLYOFFICE Docs更新到7.0版本，以便在线编辑可填写的表单"
   onlyoffice_create_dropdown: "在ONLYOFFICE中创建"
   onlyoffice_convert_dropdown: "用 ONLYOFFICE 转换"
+  onlyoffice_diagram_source: "图表源代码"
   onlyoffice_create_docx: "文档"
   onlyoffice_create_xlsx: "电子表格"
   onlyoffice_create_pptx: "演示文稿"

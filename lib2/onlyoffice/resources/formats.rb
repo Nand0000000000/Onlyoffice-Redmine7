@@ -287,6 +287,13 @@ module OnlyOffice::Resources
       actions.include?("view")
     end
 
+    # The `render` action means the format is rendered by the plugin itself,
+    # rather than sent to the Document Server.
+    sig { returns(T::Boolean) }
+    def renderable?
+      actions.include?("render")
+    end
+
     sig { returns(T::Boolean) }
     def editable?
       actions.include?("edit")

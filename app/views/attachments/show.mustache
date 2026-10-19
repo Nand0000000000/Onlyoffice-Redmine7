@@ -17,3 +17,12 @@ limitations under the License.
 {{> _blocks/view/contextual }}
 {{> _blocks/edit/contextual }}
 {{> _blocks/convert/contextual }}
+{{# diagram }}
+<div class="onlyoffice-diagram">
+  <div class="mermaid">{{ diagram }}</div>
+  <details class="onlyoffice-diagram__source">
+    <summary>{{ source_label }}</summary>
+    <pre>{{ diagram }}</pre>
+  </details>
+</div>
+{{/ diagram }}

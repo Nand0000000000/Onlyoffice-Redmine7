@@ -2,6 +2,7 @@
 
 ## 3.2.0
 ## Features
+- Rendering of the Mermaid diagrams attached as `.mmd` or `.mermaid` files.
 - Support for the Markdown (`.md`) format, including the conversion of the text
   documents to Markdown. It requires ONLYOFFICE Docs 9.3 or later.
 - Support for Redmine 7.

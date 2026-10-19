@@ -30,6 +30,9 @@
    * @returns {Promise<void>}
    */
   async function setup() {
+    if (Mermaid.rendered()) {
+      await Mermaid.setup()
+    }
     if (AttachmentsShow.rendered()) {
       AttachmentsShow.setup()
       return
@@ -121,6 +124,37 @@
     inject(template, container) {
       const clone = template.content.cloneNode(true)
       container.prepend(clone)
+    }
+  }
+
+  /**
+   * Renders the Mermaid diagrams of the page.
+   *
+   * [Local Reference](../../app/views/attachments/show.mustache)
+   */
+  const Mermaid = {
+    /**
+     * @returns {boolean}
+     */
+    rendered() {
+      return document.querySelector(".mermaid") !== null
+    },
+
+    /**
+     * @returns {Promise<void>}
+     */
+    async setup() {
+      // The library is vendored and included only on the pages with a diagram.
+      const mermaid = /** @type {any} */ (window).mermaid
+      if (!mermaid) return
+
+      mermaid.initialize({ startOnLoad: false, securityLevel: "strict" })
+      try {
+        await mermaid.run({ querySelector: ".mermaid" })
+      } catch (error) {
+        // The library draws the error itself, so it's only logged here.
+        console.error(error)
+      }
     }
   }
 

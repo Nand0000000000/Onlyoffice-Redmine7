@@ -32,6 +32,43 @@ limitations under the License.
   background-image: url("../images/actions/convert.svg");
 }
 
+/* Diagram */
+
+.onlyoffice-diagram {
+  border: 1px solid #E4E4E4;
+  border-radius: 4px;
+  margin: 16px 0;
+  overflow: auto;
+  padding: 16px;
+  text-align: center;
+}
+
+.onlyoffice-diagram .mermaid {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.onlyoffice-diagram .mermaid svg {
+  height: auto;
+  max-width: 100%;
+}
+
+.onlyoffice-diagram__source {
+  text-align: left;
+}
+
+.onlyoffice-diagram__source > summary {
+  color: #555F65;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 8px 0 0;
+}
+
+.onlyoffice-diagram__source > pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
 /* Documents Show */
 
 .controller-documents.action-show .onlyoffice-new {

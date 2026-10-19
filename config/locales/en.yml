@@ -29,6 +29,7 @@ en:
   onlyoffice_editor_forms_error_version: "Please update ONLYOFFICE Docs to version 7.0 to work on fillable forms online."
   onlyoffice_create_dropdown: "Create in ONLYOFFICE"
   onlyoffice_convert_dropdown: "Convert with ONLYOFFICE"
+  onlyoffice_diagram_source: "Diagram source"
   onlyoffice_create_docx: "Document"
   onlyoffice_create_xlsx: "Spreadsheet"
   onlyoffice_create_pptx: "Presentation"

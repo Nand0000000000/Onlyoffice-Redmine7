@@ -29,6 +29,9 @@ module OnlyOfficeRedmine::Resources
       OnlyOffice::Resources::Format
     end
 
+    # The extensions of the Mermaid diagrams.
+    DiagramNames = T.let(["mmd", "mermaid"].freeze, T::Array[String])
+
     @mutex = T.let(Mutex.new, Mutex)
 
     sig { returns(Formats) }
@@ -72,8 +75,30 @@ module OnlyOfficeRedmine::Resources
         all.add(format)
       end
 
+      diagram_formats.each do |format|
+        all.add(format)
+      end
+
       OnlyOffice::Resources::Formats.unread
       new(all: all)
+    end
+
+    # The Mermaid formats are rendered by the plugin itself, because the
+    # Document Server doesn't support them. Such formats are invisible to the
+    # "create" and the settings pages, as they are neither creatable nor
+    # editable there.
+    sig { returns(T::Array[Format]) }
+    private_class_method def self.diagram_formats
+      DiagramNames.map do |name|
+        # The `Format` constant of the class is a type alias, so the class is
+        # referenced by its full name.
+        OnlyOffice::Resources::Format.new(
+          name: name,
+          type: "diagram",
+          actions: ["render"],
+          mime: ["text/vnd.mermaid"]
+        )
+      end
     end
 
     sig { params(all: All).void }
