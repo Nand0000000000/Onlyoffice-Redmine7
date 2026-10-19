@@ -1,0 +1,20 @@
+sequenceDiagram
+    autonumber
+    participant U as Usuário
+    participant R as Redmine
+    participant P as Plugin ONLYOFFICE
+    participant DS as Document Server
+
+    U->>R: Abre o anexo .mermaid
+    R->>P: GET /attachments/:id
+    P-->>U: Página do anexo
+    U->>P: Carrega mermaid.min.js
+    P-->>U: Diagrama renderizado em SVG
+
+    U->>P: Edita e salva (paradigma configurado)
+    P->>DS: Converte o documento para Markdown
+    DS-->>P: Markdown
+    P-->>U: Editor de blocos
+    U->>P: Salva as alterações
+    P->>DS: Converte o Markdown de volta
+    DS-->>P: Arquivo no formato original

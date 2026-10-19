@@ -39,6 +39,10 @@ Caminhos:
 | 1 | `sample.docx` | fixture pequena |
 | 2 | `sample.png` | imagem |
 | 9 | `saved-conversion.pdf` | criado por um teste de "Salvar como" |
+| 13 / 14 | `fluxo.mmd` / `fluxo.mermaid` | diagramas Mermaid avulsos |
+| 15 | `blocks.md` | documento com todos os tipos de bloco (recriado por `blocksfix.rb`) |
+| 18 | `mermaid-inline.md` | cerca ```` ```mermaid ```` dentro de um `.md` (recriado por `mermaidfix.rb`) |
+| wiki `Mermaid` | página do projeto `oo-test` | cerca ```` ```mermaid ```` fora das views do plugin (recriada por `wikimermaid.rb`) |
 
 As fixtures ficam no volume do PostgreSQL: `docker compose down` (sem `-v`)
 preserva tudo.
@@ -226,6 +230,10 @@ Os quatro primeiros são verificados automaticamente pelo `smoke.ps1`.
 
 - [ ] `smoke.ps1` → 27 PASS / 0 FAIL
 - [ ] `convert.ps1` → URL pública + download OK
+- [ ] `mmdview.ps1` → 27 PASS / 0 FAIL
+- [ ] `blocksview.ps1` → 20 PASS / 0 FAIL
+- [ ] Diagramas `.mmd` / `.mermaid` renderizam na página do anexo
+- [ ] Editor de blocos salva `.md` e faz o round-trip de `.docx`
 - [ ] Editor abre em *Visualizar* e *Editar* (`real.docx`)
 - [ ] Salvamento grava o arquivo (log + tamanho/data novos)
 - [ ] Botões do plugin aparecem em issue, files, documents, news, fórum, wiki
@@ -258,11 +266,117 @@ docker compose restart redmine
 
 ---
 
+## 9. Diagramas Mermaid e editor de blocos (fases 2, 3 e 4)
+
+### 9.1 Diagramas Mermaid (fase 2)
+
+Os anexos `.mmd` / `.mermaid` são renderizados na própria página do anexo.
+
+```powershell
+cd C:\Users\Fernando\AppData\Local\Temp\opencode\rm7
+powershell -ExecutionPolicy Bypass -File mmdview.ps1     # 29 PASS / 0 FAIL
+
+cd pptr
+node render-mermaid.js                                   # 9 PASS por diagrama
+```
+
+Critérios: SVG gerado dentro do bloco do diagrama, fonte do diagrama disponível
+e nenhum erro de página. A biblioteca não é mais incluída na página: o
+`mermaid-lazy.js` (incluído em todas as páginas pelo hook `view_layouts_base_html_head`)
+baixa o `mermaid.min.js` só quando a página tem um elemento `.mermaid`.
+
+### 9.2 Editor de blocos (fase 3)
+
+O paradigma de edição fica nas configurações globais do plugin.
+
+```powershell
+# alterna o paradigma (blocks | onlyoffice)
+docker compose exec -T -u redmine -e RAILS_ENV=production -e SECRET_KEY_BASE=supersecretkeybase `
+  redmine bundle exec rails runner /tmp/paradigm.rb blocks
+```
+
+Testes automatizados:
+
+```powershell
+cd C:\Users\Fernando\AppData\Local\Temp\opencode\rm7
+powershell -ExecutionPolicy Bypass -File blocksview.ps1        # 20 PASS / 0 FAIL
+
+cd pptr
+node settings-paradigm.js     # salva o paradigma pela tela de configurações
+node blocks-editor.js 15      # anexo .md: renderização, atalhos e salvamento
+node blocks-docx.js 8         # .docx: abre como Markdown e salva de volta em .docx
+node blocks-slash.js 15       # menu "/": filtro, setas, Escape, clique e persistência
+```
+
+| Cenário | Esperado |
+| ------- | -------- |
+| Paradigma `onlyoffice` | links de edição apontam para `/onlyoffice/attachments/:id/edit` |
+| Paradigma `blocks` | links de edição apontam para `/onlyoffice/attachments/:id/blocks` |
+| Anexo `.md` ou `.txt` | abre no editor de blocos sem conversão |
+| Anexo `.docx` / `.odt` / `.rtf` / `.txt` | convertido para Markdown ao abrir (com aviso na tela) e convertido de volta ao salvar |
+| Blocos | títulos, parágrafos, listas, listas de tarefas, citações, código, diagramas e divisores |
+| Atalhos | `#`, `##`, `-`, `1.`, `>`, `---` e crase tripla |
+| Menu `/` | digitar `/` abre a lista com os 11 tipos; filtrar por nome ou alias (`/h1`, `/todo`, `/mermaid`), navegar com as setas, aplicar com `Enter`/`Tab` ou clique; `Escape` fecha; `/` dentro de um bloco de código é texto normal |
+| Salvamento | `POST /onlyoffice/attachments/:id/blocks/save` grava o arquivo e o Markdown recarregado contém a alteração |
+| Fidelidade do `.docx` | depois de salvar, o arquivo reabre como `.docx` válido e a alteração aparece |
+| Limite de tamanho | conteúdo acima de `Setting.attachment_max_size` é recusado com `413` |
+
+Observações:
+
+- o editor de blocos grava sempre a representação Markdown; ao salvar um `.docx`,
+  o Document Server converte o Markdown de volta para `.docx` (parte da
+  formatação original pode ser perdida — a tela avisa antes de abrir);
+- a chave do documento no Document Server é o token do anexo (`id.digest`),
+  então um arquivo alterado fora do editor não é servido a partir do cache.
+
+### 9.3 Mermaid embutido nos documentos (fase 4)
+
+Uma cerca ```` ```mermaid ```` (ou ```` ```mmd ````) no conteúdo Markdown é
+renderizada como diagrama na página que exibe o conteúdo — anexo `.md`, wiki,
+descrição/notas de issue, notícias e documentos. A fonte fica recolhida em
+"Diagram source", embaixo do diagrama.
+
+```powershell
+# recria as fixtures
+docker compose cp mermaid-inline.md redmine:/tmp/mermaid-inline.md
+docker compose cp mermaidfix.rb redmine:/tmp/mermaidfix.rb
+docker compose cp wikimermaid.rb redmine:/tmp/wikimermaid.rb
+docker compose exec -T -u redmine -e RAILS_ENV=production -e SECRET_KEY_BASE=supersecretkeybase `
+  redmine bundle exec rails runner /tmp/mermaidfix.rb      # anexo 18
+docker compose exec -T -u redmine -e RAILS_ENV=production -e SECRET_KEY_BASE=supersecretkeybase `
+  redmine bundle exec rails runner /tmp/wikimermaid.rb     # wiki "Mermaid"
+
+cd pptr
+node mermaid-inline.js 18     # 36 PASS / 0 FAIL
+```
+
+| Cenário | Esperado |
+| ------- | -------- |
+| Anexo `.md` com a cerca | a cerca vira diagrama e a página não tem mais `pre code[data-language=mermaid]` |
+| Wiki / issue / notícias | mesma renderização (o hook não depende das views do plugin) |
+| Página sem diagrama | `window.mermaid` indefinido — o `mermaid.min.js` (3,4 MB) não é baixado |
+| Fonte | seção "Diagram source" com o texto da cerca |
+| Editor de blocos | bloco de código `mermaid` desenha o diagrama embaixo da fonte, atualizado enquanto digita |
+| Botão do diagrama | `▾`/`▸` recolhe e expande o diagrama do bloco |
+| Menu `/` | `/mermaid` insere um bloco com o modelo `flowchart LR` e o diagrama já desenhado |
+| Barra de ferramentas | botão `◇` converte o bloco atual em diagrama |
+| Salvar | as cercas ```` ```mermaid ```` permanecem no Markdown e os três diagramas reabrem desenhados |
+| `Enter` no bloco de código | insere quebra de linha real (`\n`), preservada no Markdown |
+
+Observações:
+
+- o diagrama é desenhado no navegador (a biblioteca é vendorizada e roda com
+  `securityLevel: "strict"`); nada é enviado ao Document Server;
+- dentro do `.docx` aberto no editor ONLYOFFICE a cerca aparece como texto: o
+  diagrama vivo só existe no editor de blocos e nas páginas do Redmine.
+
+---
+
 ## Anexo — scripts da stack de teste
 
 | Script | Função |
 | ------ | ------ |
-| `smoke.ps1` | 27 verificações de infra, login, assets, leitura e erros esperados |
+| `smoke.ps1` | 29 verificações de infra, login, assets, leitura e erros esperados |
 | `convert.ps1` | conversão "Baixar como" ponta a ponta |
 | `build.ps1` | reconstrói o artefato `plugin\` a partir do fonte |
 | `retest.ps1` | `build.ps1` + restart do Redmine + GET de uma URL |
@@ -272,3 +386,16 @@ docker compose restart redmine
 | `pptr/open-editor.js` | abre o editor no Chrome headless e inspeciona frames |
 | `pptr/save-editor.js` | edita e fecha o editor, disparando o callback real |
 | `e2e3.ps1` | conversão + "Salvar como" + salvamento de configurações (cria anexos) |
+| `mmdview.ps1` | renderização dos anexos `.mmd` / `.mermaid` na página do anexo |
+| `blocksview.ps1` | paradigma nos links, páginas do editor de blocos e conteúdo |
+| `paradigm.rb` | alterna o paradigma de edição (`blocks` / `onlyoffice`) |
+| `mdenable.rb` | liga/desliga o formato `md` em `formats_editable` |
+| `blocksfix.rb` | recria o anexo 15 (`blocks.md`) com todos os tipos de bloco |
+| `mermaidfix.rb` | recria o anexo 18 (`mermaid-inline.md`) com a cerca ```` ```mermaid ```` |
+| `wikimermaid.rb` | recria a página de wiki `Mermaid` do projeto `oo-test` |
+| `pptr/render-mermaid.js` | abre a página do diagrama e confere o SVG gerado |
+| `pptr/blocks-editor.js` | edita e salva um `.md` no editor de blocos |
+| `pptr/blocks-slash.js` | exercita o menu `/` (filtro, setas, Escape, clique, persistência) |
+| `pptr/blocks-docx.js` | abre um `.docx`, edita e salva de volta em `.docx` |
+| `pptr/settings-paradigm.js` | troca o paradigma pela tela de configurações |
+| `pptr/mermaid-inline.js` | diagrama embutido: anexo, wiki, bloqueio do download sem diagrama, editor de blocos, menu `/`, barra e salvamento |

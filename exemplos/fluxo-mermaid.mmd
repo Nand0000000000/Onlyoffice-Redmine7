@@ -1,0 +1,9 @@
+flowchart TD
+    A["Usuário abre o anexo .mmd"] --> B{"Formato suportado?"}
+    B -- "Sim (.mmd / .mermaid)" --> C["Plugin renderiza o diagrama"]
+    B -- "Não" --> D["Download comum do anexo"]
+    C --> E["SVG exibido na página do anexo"]
+    C --> F["Código-fonte disponível"]
+    E --> G{"Paradigma de edição"}
+    G -- "ONLYOFFICE Docs" --> H["Editor ONLYOFFICE"]
+    G -- "Editor de blocos" --> I["Editor de blocos (Markdown)"]
