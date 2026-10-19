@@ -54,6 +54,23 @@
    */
 
   /**
+   * The languages of the code blocks which are rendered as diagrams.
+   *
+   * @type {Array<string>}
+   */
+  const DiagramLanguages = ["mermaid", "mmd"]
+
+  /**
+   * The diagram which is inserted by the editor.
+   *
+   * @type {string}
+   */
+  const DiagramTemplate = [
+    "flowchart LR",
+    "    A[Start] --> B[End]"
+  ].join("\n")
+
+  /**
    * The state of the editor.
    */
   const State = {
@@ -126,6 +143,7 @@
     setupEditing()
     setupSlashMenu()
     setupSaving()
+    scheduleDiagrams()
   }
 
   /* ------------------------------------------------------------------ */
@@ -555,6 +573,11 @@
 
     element.appendChild(body)
 
+    const language = String(block.language || "").toLowerCase()
+    if (block.type === "code" && DiagramLanguages.includes(language)) {
+      attachDiagram(element)
+    }
+
     return element
   }
 
@@ -655,7 +678,10 @@
     if (event.key === "Enter" && !event.shiftKey) {
       if (block.dataset.type === "code" || block.dataset.type === "raw") {
         event.preventDefault()
-        document.execCommand("insertText", false, "\n")
+
+        // The code blocks hold plain text, so the browser inserts a newline
+        // character (and not an element) for the line break.
+        document.execCommand("insertLineBreak")
         markModified()
         return
       }
@@ -689,6 +715,10 @@
 
     if (block.dataset.type === "paragraph") {
       applyShortcut(block, body)
+    }
+
+    if (isDiagramBlock(block)) {
+      scheduleDiagrams()
     }
 
     updateSlashMenu()
@@ -879,6 +909,13 @@
       const block = activeBlock()
       if (!block) return
 
+      if (button.dataset.action === "diagram") {
+        if (!isDiagramBlock(block)) {
+          makeDiagram(block)
+        }
+        return
+      }
+
       if (button.dataset.type) {
         changeType(block, button.dataset.type)
         return
@@ -1021,6 +1058,13 @@
       icon: "{ }",
       hint: "```",
       aliases: ["code", "pre", "snippet"]
+    },
+    {
+      type: "diagram",
+      label: "Mermaid diagram",
+      icon: "◇",
+      hint: "",
+      aliases: ["mermaid", "diagram", "mmd", "flowchart", "chart"]
     },
     {
       type: "divider",
@@ -1329,6 +1373,12 @@
     removeSlashQuery(body, state.start)
     closeSlashMenu()
 
+    // The diagram is a code block with the source of the diagram.
+    if (item.type === "diagram") {
+      makeDiagram(block)
+      return
+    }
+
     const replacement = changeType(block, item.type)
 
     // A divider has no content, so the caret is moved to the next paragraph.
@@ -1402,6 +1452,145 @@
     State.slashState.index = 0
     State.slashState.query = ""
     State.slashState.start = 0
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Diagrams                                                            */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * The timer which renders the diagrams after the source is edited.
+   *
+   * @type {number | null}
+   */
+  let diagramsTimer = null
+
+  /**
+   * @param {HTMLElement} block
+   * @returns {boolean}
+   */
+  function isDiagramBlock(block) {
+    if (block.dataset.type !== "code") return false
+
+    const language = String(block.dataset.language || "").toLowerCase()
+    return DiagramLanguages.includes(language)
+  }
+
+  /**
+   * Adds the preview of the diagram to a code block.
+   *
+   * @param {HTMLElement} block
+   * @returns {void}
+   */
+  function attachDiagram(block) {
+    if (block.querySelector(".onlyoffice-blocks__diagram")) return
+
+    const wrapper = document.createElement("div")
+    wrapper.className = "onlyoffice-blocks__diagram"
+
+    const toggle = document.createElement("button")
+    toggle.type = "button"
+    toggle.className = "onlyoffice-blocks__diagram-toggle"
+    toggle.title = "Hide diagram"
+    toggle.textContent = "▾"
+    toggle.addEventListener("click", () => {
+      const hidden = wrapper.classList.toggle(
+        "onlyoffice-blocks__diagram--hidden"
+      )
+      toggle.title = hidden ? "Show diagram" : "Hide diagram"
+      toggle.textContent = hidden ? "▸" : "▾"
+    })
+
+    const canvas = document.createElement("div")
+    canvas.className = "onlyoffice-blocks__diagram-canvas"
+
+    wrapper.append(toggle, canvas)
+    block.appendChild(wrapper)
+  }
+
+  /**
+   * Renders the diagrams of the document, after the editing stops.
+   *
+   * @returns {void}
+   */
+  function scheduleDiagrams() {
+    if (diagramsTimer !== null) window.clearTimeout(diagramsTimer)
+
+    diagramsTimer = window.setTimeout(() => {
+      diagramsTimer = null
+      renderDiagrams()
+    }, 350)
+  }
+
+  /**
+   * @returns {Promise<void>}
+   */
+  async function renderDiagrams() {
+    if (!State.container) return
+
+    const blocks = Array.from(State.container.children).filter((element) =>
+      isDiagramBlock(/** @type {HTMLElement} */ (element))
+    )
+
+    for (const block of blocks) {
+      await renderDiagram(/** @type {HTMLElement} */ (block))
+    }
+  }
+
+  /**
+   * @param {HTMLElement} block
+   * @returns {Promise<void>}
+   */
+  async function renderDiagram(block) {
+    // The library is vendored and loaded by the loader of the plugin, which is
+    // a part of every page.
+    const loader = /** @type {any} */ (window).OnlyOfficeMermaid
+    if (!loader) return
+
+    const canvas = /** @type {HTMLElement | null} */ (
+      block.querySelector(".onlyoffice-blocks__diagram-canvas")
+    )
+    const body = /** @type {HTMLElement | null} */ (
+      block.querySelector(".onlyoffice-blocks__body")
+    )
+    if (!canvas || !body) return
+
+    const source = (body.textContent || "").trim()
+    if (source === "") {
+      canvas.textContent = ""
+      delete canvas.dataset.source
+      return
+    }
+
+    if (canvas.dataset.source === source && canvas.querySelector("svg")) return
+
+    // The source must be a part of the canvas: it's what the library renders.
+    canvas.dataset.source = source
+    canvas.textContent = source
+    await loader.render(canvas)
+  }
+
+  /**
+   * Turns a block into a code block with the source of a diagram.
+   *
+   * @param {HTMLElement} block
+   * @returns {HTMLElement} The block which replaced the given one.
+   */
+  function makeDiagram(block) {
+    const replacement = changeType(block, "code")
+    replacement.dataset.language = "mermaid"
+    attachDiagram(replacement)
+
+    const body = /** @type {HTMLElement | null} */ (
+      replacement.querySelector(".onlyoffice-blocks__body")
+    )
+    if (body) {
+      body.textContent = DiagramTemplate
+      placeCaretAtEnd(body)
+    }
+
+    scheduleDiagrams()
+    return replacement
   }
 
   /* ------------------------------------------------------------------ */

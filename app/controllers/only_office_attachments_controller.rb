@@ -57,10 +57,9 @@ class OnlyOfficeAttachmentsController < ApplicationController
       view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
     end
 
+    # The Mermaid library is loaded by the loader of the plugin, which is a
+    # part of every page.
     view.setup_assets
-    if diagram
-      view.setup_diagram_assets
-    end
     view.inline
   end
 

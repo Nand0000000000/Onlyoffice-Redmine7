@@ -33,11 +33,6 @@ class Views::Attachments::Show < Views::Mustache
   sig { returns(T.nilable(String)) }
   attr_accessor :diagram
 
-  sig { void }
-  def setup_diagram_assets
-    setup_scripts(["mermaid.min"])
-  end
-
   sig { returns(String) }
   def source_label
     I18n.t("onlyoffice_diagram_source")

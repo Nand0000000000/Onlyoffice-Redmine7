@@ -86,6 +86,46 @@ limitations under the License.
   white-space: pre-wrap;
 }
 
+/* Mermaid diagrams embedded in the contents, for example the code fences of
+   the Markdown contents. [Local Reference](../javascripts/mermaid-lazy.js) */
+
+.onlyoffice-mermaid {
+  border: 1px solid #E4E4E4;
+  border-radius: 4px;
+  margin: 16px 0;
+  overflow: auto;
+  padding: 16px;
+  text-align: center;
+}
+
+.onlyoffice-mermaid .mermaid {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.onlyoffice-mermaid .mermaid svg {
+  height: auto;
+  max-width: 100%;
+}
+
+.onlyoffice-mermaid__source {
+  border-top: 1px solid #E4E4E4;
+  margin-top: 12px;
+  padding-top: 8px;
+  text-align: left;
+}
+
+.onlyoffice-mermaid__source > summary {
+  color: #555F65;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.onlyoffice-mermaid__source > pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
 /* Documents Show */
 
 .controller-documents.action-show .onlyoffice-new {
@@ -420,6 +460,7 @@ limitations under the License.
 .onlyoffice-blocks__block {
   align-items: flex-start;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 2px 0;
 }
@@ -525,6 +566,54 @@ limitations under the License.
   border-top: 1px solid #E4E4E4;
   flex: 1;
   margin: 12px 0;
+}
+
+.onlyoffice-blocks__diagram {
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #E4E4E4;
+  border-radius: 4px;
+  display: flex;
+  flex-basis: 100%;
+  justify-content: center;
+  margin: 4px 0 4px 26px;
+  min-height: 40px;
+  overflow-x: auto;
+  padding: 8px;
+  position: relative;
+}
+
+.onlyoffice-blocks__diagram--hidden .onlyoffice-blocks__diagram-canvas {
+  display: none;
+}
+
+.onlyoffice-blocks__diagram-canvas {
+  max-width: 100%;
+}
+
+.onlyoffice-blocks__diagram svg {
+  height: auto;
+  max-width: 100%;
+}
+
+.onlyoffice-blocks__diagram-toggle {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #9AA0A4;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+}
+
+.onlyoffice-blocks__diagram-toggle:focus-visible,
+.onlyoffice-blocks__diagram-toggle:hover {
+  background: #F2F4F5;
+  color: #505050;
 }
 
 .onlyoffice-blocks__slash {

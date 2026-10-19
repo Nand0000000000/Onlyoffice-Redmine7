@@ -144,17 +144,12 @@
      * @returns {Promise<void>}
      */
     async setup() {
-      // The library is vendored and included only on the pages with a diagram.
-      const mermaid = /** @type {any} */ (window).mermaid
-      if (!mermaid) return
+      // The library is vendored and loaded by the loader of the plugin, which
+      // is a part of every page.
+      const loader = /** @type {any} */ (window).OnlyOfficeMermaid
+      if (!loader) return
 
-      mermaid.initialize({ startOnLoad: false, securityLevel: "strict" })
-      try {
-        await mermaid.run({ querySelector: ".mermaid" })
-      } catch (error) {
-        // The library draws the error itself, so it's only logged here.
-        console.error(error)
-      }
+      await loader.renderAll()
     }
   }
 

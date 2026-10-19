@@ -10,6 +10,11 @@
   The types of the blocks can be changed with the toolbar, the Markdown
   shortcuts, and the slash menu (`/h1`, `/todo`, and so on).
 - Rendering of the Mermaid diagrams attached as `.mmd` or `.mermaid` files.
+- Rendering of the Mermaid diagrams embedded in the Markdown contents, such as
+  the description of an issue, a wiki page, or a rendered Markdown attachment,
+  as a `mermaid` code fence. The block editor draws a `mermaid` code block as a
+  diagram while it is edited, and the block can be inserted with the toolbar or
+  the `/mermaid` command of the slash menu.
 - Support for the Markdown (`.md`) format, including the conversion of the text
   documents to Markdown. It requires ONLYOFFICE Docs 9.3 or later.
 - Support for Redmine 7.

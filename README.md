@@ -25,7 +25,8 @@ Find out more details [here](https://api.onlyoffice.com/docs/docs-api/get-starte
 - Mobile view for licensed editors.
 - Creating new attachments using templates that consider the user's language preference.
 - Converting attachments and saving or downloading them.
-- Rendering the Mermaid diagrams attached as `.mmd` or `.mermaid` files.
+- Rendering the Mermaid diagrams attached as `.mmd` or `.mermaid` files, and the
+  Mermaid diagrams embedded in the Markdown contents as `mermaid` code fences.
 
 <p align="center">
   <a href="https://www.onlyoffice.com/office-for-redmine">
@@ -46,7 +47,7 @@ Find out more details [here](https://api.onlyoffice.com/docs/docs-api/get-starte
 
 \* To be able to open the format for editing, check it in the [formats settings](#formats). Due to some format restrictions, data loss may occur.
 
-The `mmd` and `mermaid` files are not handled by ONLYOFFICE Docs: the plugin renders them as diagrams with the bundled [Mermaid](https://mermaid.js.org/) library, which is distributed under the MIT license.
+The `mmd` and `mermaid` files are not handled by ONLYOFFICE Docs: the plugin renders them as diagrams with the bundled [Mermaid](https://mermaid.js.org/) library, which is distributed under the MIT license. The library also renders the `mermaid` code fences of the Markdown contents, and it is loaded only on the pages which have a diagram.
 
 ## Installing ONLYOFFICE Docs
 
@@ -180,7 +181,23 @@ On the Attachment page, users can open the attachment to view, edit, or convert 
 
 The block editor is an alternative to the ONLYOFFICE editor for the text documents. It is enabled with the [editing paradigm](#text-editing) option of the plugin settings and replaces the "Edit" link of the text attachments.
 
-The editor works with the Markdown representation of a document: the attachment is parsed into blocks (headings, paragraphs, lists, to-do lists, quotes, code blocks, and dividers) when the editor is opened and written back to the file when it is saved. The types of the blocks can be changed with the toolbar, the slash menu (type `/` to open the list of the block types and filter it with a name or an alias, such as `/h1` or `/todo`), the Markdown shortcuts (`# `, `- `, `1. `, `> `, and the triple backtick), or the inline formatting of the block. The documents of the word processing formats are converted to Markdown by ONLYOFFICE Docs when they are opened and back to their format when they are saved, so a part of the formatting may be lost.
+The editor works with the Markdown representation of a document: the attachment is parsed into blocks (headings, paragraphs, lists, to-do lists, quotes, code blocks, diagrams, and dividers) when the editor is opened and written back to the file when it is saved. The types of the blocks can be changed with the toolbar, the slash menu (type `/` to open the list of the block types and filter it with a name or an alias, such as `/h1` or `/todo`), the Markdown shortcuts (`# `, `- `, `1. `, `> `, and the triple backtick), or the inline formatting of the block. The documents of the word processing formats are converted to Markdown by ONLYOFFICE Docs when they are opened and back to their format when they are saved, so a part of the formatting may be lost.
+
+A Mermaid diagram is a code block with the `mermaid` language, so it is saved as a `mermaid` code fence. The editor draws the diagram under the source of the block and updates it while the source is edited, and the button of the block collapses the diagram. The block can be inserted with the diagram button of the toolbar, with the slash menu (`/mermaid`), or with the triple backtick and the `mermaid` language.
+
+### Mermaid diagrams
+
+The plugin renders the Mermaid diagrams of two forms:
+
+- the attachments of the `mmd` and `mermaid` formats, on their own pages;
+- the `mermaid` code fences of the Markdown contents, on every page where the contents are rendered, such as the description of an issue, a wiki page, a news item, or a rendered Markdown attachment:
+
+      ```mermaid
+      flowchart LR
+          A[Start] --> B[End]
+      ```
+
+The source of an embedded diagram is available in the "Diagram source" section under it. The library is bundled with the plugin and is loaded only on the pages which have a diagram.
 
 ### Files
 
