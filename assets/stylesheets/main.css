@@ -17,7 +17,24 @@ limitations under the License.
 /* Icon */
 
 .onlyoffice-icon {
+  background-position: center;
+  background-repeat: no-repeat;
   background-size: 16px;
+}
+
+/* Redmine 7 no longer gives a size to the ".icon-only" links, so the icon of
+   an empty link has to be sized here. */
+.onlyoffice-icon:empty {
+  display: inline-block;
+  height: 16px;
+  vertical-align: middle;
+  width: 16px;
+}
+
+/* The links which have a label keep the icon on the left of the text. */
+.onlyoffice-icon:not(:empty) {
+  background-position: 9px center;
+  padding-inline-start: 29px;
 }
 
 .onlyoffice-icon__view {

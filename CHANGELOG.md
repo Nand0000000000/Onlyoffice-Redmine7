@@ -15,6 +15,8 @@
 - Support for Redmine 7.
 
 ## Bug Fixes
+- Fixed the ONLYOFFICE icons of the attachment lists being invisible, and the
+  icon of the links with a label overlapping the text, in Redmine 7.
 - Fixed an error when viewing an attachment that has no description.
 - Fixed an internal request without a valid JWT token returning `500` instead of `401`.
 - Fixed view templates not loading with Mustache 1.1.2 and later.
