@@ -44,6 +44,49 @@ module OnlyOffice::Resources
     extend T::Sig
     extend Resource
 
+    # The Markdown format was introduced in ONLYOFFICE Docs 9.0, but the pinned
+    # version of the `document-formats` submodule doesn't contain it yet. The
+    # definition below mirrors the upstream `onlyoffice-docs-formats.json` and
+    # is ignored once the submodule is updated.
+    #
+    # The keys are strings, because the hash describes a JSON record and
+    # `Format.from_hash` reads only strings.
+    # rubocop:disable Style/StringHashKeys
+    Markdown = T.let(
+      {
+        "name" => "md",
+        "type" => "word",
+        "actions" => ["view", "lossy-edit"],
+        # rubocop:disable Layout/MultilineArrayLineBreaks
+        "convert" => [
+          "docx", "bmp", "docm", "dotm", "dotx", "epub", "fb2", "gif", "html",
+          "jpg", "odt", "ott", "pdf", "pdfa", "png", "rtf", "txt"
+        ],
+        # rubocop:enable Layout/MultilineArrayLineBreaks
+        "mime" => ["text/markdown"]
+      }.freeze,
+      T::Hash[String, T.untyped]
+    )
+    # rubocop:enable Style/StringHashKeys
+
+    # Markdown stands before `mht` in the upstream `onlyoffice-docs-formats.json`,
+    # so it's inserted there to keep the same order.
+    MarkdownSuccessor = T.let("mht", String)
+
+    # The formats which support the conversion to Markdown. The names which are
+    # missing in the pinned submodule are simply not found in the list.
+    # rubocop:disable Layout/MultilineArrayLineBreaks
+    MarkdownConvertibles = T.let(
+      [
+        "doc", "docm", "docx", "dot", "dotm", "dotx", "epub", "fb2", "fodt",
+        "hml", "htm", "html", "hwp", "hwpx", "mht", "mhtml", "odt", "ott",
+        "ofd", "oxps", "pages", "pdf", "rtf", "stw", "sxw", "txt", "wps",
+        "wpt", "xml", "xps"
+      ].freeze,
+      T::Array[String]
+    )
+    # rubocop:enable Layout/MultilineArrayLineBreaks
+
     @mutex = T.let(Mutex.new, Mutex)
 
     sig { void }
@@ -69,6 +112,7 @@ module OnlyOffice::Resources
       all = T.let(Set.new, All)
       contents = file.read
       list = JSON.parse(contents)
+      insert_markdown(list)
       list.each do |item|
         format = Format.from_hash(item)
 
@@ -89,7 +133,39 @@ module OnlyOffice::Resources
         all.add(format)
       end
 
+      all.each do |format|
+        markdownize(format)
+      end
+
       new(all: all)
+    end
+
+    sig { params(list: T::Array[T.untyped]).void }
+    private_class_method def self.insert_markdown(list)
+      if list.any? { |item| item["name"] == Markdown["name"] }
+        return
+      end
+      index = list.index { |item| item["name"] == MarkdownSuccessor }
+      if index.nil?
+        list.append(Markdown)
+      else
+        list.insert(index, Markdown)
+      end
+    end
+
+    sig { params(format: Format).void }
+    private_class_method def self.markdownize(format)
+      unless MarkdownConvertibles.include?(format.name)
+        return
+      end
+      name = T.cast(Markdown["name"], String)
+      if format.convert.include?(name)
+        return
+      end
+      # The `convert` array is shared with the cached `Format` instance of the
+      # resource, so it must be copied before the modification.
+      format.convert = format.convert.dup
+      format.convert.append(name)
     end
 
     sig { returns(Pathname) }

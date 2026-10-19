@@ -36,11 +36,11 @@ Find out more details [here](https://api.onlyoffice.com/docs/docs-api/get-starte
 
 <!-- DO NOT EDIT MANUALLY, THE TABLE IS GENERATED AUTOMATICALLY -->
 <!-- def-formats -->
-| |djvu|doc|docm|docx|docxf|dot|dotm|dotx|epub*|fb2*|fodt|htm|html*|mht|mhtml|odt*|oform|ott*|oxps|pdf|rtf*|stw|sxw|txt*|wps|wpt|xml|xps|csv*|et|ett|fods|ods*|ots*|sxc|xls|xlsb|xlsm|xlsx|xlt|xltm|xltx|dps|dpt|fodp|odp*|otp*|pot|potm|potx|pps|ppsm|ppsx|ppt|pptm|pptx|sxi|
-|:-|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-|View|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|
-|Edit|-|-|+|+|+|-|+|+|+|+|-|-|+|-|-|+|-|+|-|+|+|-|-|+|-|-|-|-|+|-|-|-|+|+|-|-|-|+|+|-|+|+|-|-|-|+|+|-|+|+|-|+|+|-|+|+|-|
-|Create|-|-|-|+|+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|+|-|
+| |djvu|doc|docm|docx|docxf|dot|dotm|dotx|epub*|fb2*|fodt|htm|html*|md*|mht|mhtml|odt*|oform|ott*|oxps|pdf|rtf*|stw|sxw|txt*|wps|wpt|xml|xps|csv*|et|ett|fods|ods*|ots*|sxc|xls|xlsb|xlsm|xlsx|xlt|xltm|xltx|dps|dpt|fodp|odp*|otp*|pot|potm|potx|pps|ppsm|ppsx|ppt|pptm|pptx|sxi|
+|:-|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+|View|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|+|
+|Edit|-|-|+|+|+|-|+|+|+|+|-|-|+|+|-|-|+|-|+|-|+|+|-|-|+|-|-|-|-|+|-|-|-|+|+|-|-|-|+|+|-|+|+|-|-|-|+|+|-|+|+|-|+|+|-|+|+|-|
+|Create|-|-|-|+|+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|+|-|
 <!-- end-formats -->
 
 \* To be able to open the format for editing, check it in the [formats settings](#formats). Due to some format restrictions, data loss may occur.

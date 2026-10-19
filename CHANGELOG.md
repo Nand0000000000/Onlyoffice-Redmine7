@@ -2,6 +2,8 @@
 
 ## 3.2.0
 ## Features
+- Support for the Markdown (`.md`) format, including the conversion of the text
+  documents to Markdown. It requires ONLYOFFICE Docs 9.3 or later.
 - Support for Redmine 7.
 
 ## Bug Fixes
