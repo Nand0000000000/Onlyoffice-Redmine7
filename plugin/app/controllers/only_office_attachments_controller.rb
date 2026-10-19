@@ -1,0 +1,1742 @@
+#
+# (c) Copyright Ascensio System SIA 2025
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# typed: true
+# frozen_string_literal: true
+
+class OnlyOfficeAttachmentsController < ApplicationController
+  extend T::Sig
+  extend OnlyOfficePluginHelper::Injection
+  extend OnlyOfficeViewHelper::Injection
+
+  # ```http
+  # GET /attachments/{{attachment_id}}
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  #
+  # [Redmine Reference](https://github.com/redmine/redmine/blob/6.0.0/app/controllers/attachments_controller.rb#L38)
+  sig { params(helpers: T.untyped, attachment: ::Attachment).returns(String) }
+  def self.show_attachment(helpers, attachment)
+    unless onlyoffice_plugin_available?
+      return ""
+    end
+
+    user = OnlyOfficeRedmine::User.current
+
+    view = Views::Attachments::Show.new(helpers: helpers)
+
+    block = setup_link_to_attachment(helpers, user, attachment)
+    diagram = diagram_content(attachment, user)
+    unless block.sense? || diagram
+      return ""
+    end
+
+    view.view_url = block.view_url
+    view.edit_url = block.edit_url
+    view.convert_url = block.convert_url
+    view.diagram = diagram
+
+    if Redmine::VERSION::MAJOR == 6
+      view.view_icon = helpers.sprite_icon("edit", view.view_label)
+      view.edit_icon = helpers.sprite_icon("edit", view.edit_icon)
+      view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
+    end
+
+    # The Mermaid library is loaded by the loader of the plugin, which is a
+    # part of every page.
+    view.setup_assets
+    view.inline
+  end
+
+  # The content of the attachments which are rendered by the plugin, for
+  # example the Mermaid diagrams. It's `nil` for the formats which are handled
+  # by the Document Server.
+  sig do
+    params(
+      attachment: ::Attachment,
+      user: OnlyOfficeRedmine::User
+    )
+      .returns(T.nilable(String))
+  end
+  private_class_method def self.diagram_content(attachment, user)
+    wrapped = OnlyOfficeRedmine::Attachment.new(attachment: attachment)
+    unless wrapped.renderable?(user)
+      return nil
+    end
+
+    content = wrapped.content
+    if content.strip.empty?
+      return nil
+    end
+
+    content
+  end
+
+  # Whether the attachment is rendered by the plugin itself, rather than by the
+  # Document Server. Such attachments have a preview, so Redmine shouldn't tell
+  # the user that it's unavailable.
+  sig { params(attachment: ::Attachment).returns(T::Boolean) }
+  def self.renderable_attachment?(attachment)
+    wrapped = OnlyOfficeRedmine::Attachment.new(attachment: attachment)
+    wrapped.renderable?(OnlyOfficeRedmine::User.current)
+  end
+
+  # ```http
+  # GET /documents/{{document_id}}
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  #
+  # [Redmine Reference](https://github.com/redmine/redmine/blob/6.0.0/app/controllers/documents_controller.rb#L49)
+  sig { params(helpers: T.untyped, document: ::Document).returns(String) }
+  def self.show_document(helpers, document)
+    unless onlyoffice_plugin_available?
+      return ""
+    end
+
+    user = OnlyOfficeRedmine::User.current
+    container = OnlyOfficeRedmine::Document.new(document: document)
+
+    view = Views::Documents::Show.new(helpers: helpers)
+    view.attachments = setup_link_to_attachments(helpers, user, container)
+
+    if container.addition_allowed?(user)
+      view.new_url = helpers.onlyoffice_new_attachment_path(
+        container.type,
+        container.id
+      )
+    end
+
+    if view.attachments.empty? && !view.new_url
+      return ""
+    end
+
+    if Redmine::VERSION::MAJOR == 6
+      view.view_icon = helpers.sprite_icon("edit", view.view_label)
+      view.edit_icon = helpers.sprite_icon("edit", view.edit_icon)
+      view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
+    end
+
+    view.setup_assets
+    view.inline
+  end
+
+  # ```http
+  # GET /projects/{{project_id}}/files
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  #
+  # [Redmine Reference](https://github.com/redmine/redmine/blob/6.0.0/app/controllers/files_controller.rb#L31)
+  sig { params(helpers: T.untyped, containers: T.untyped).returns(String) }
+  def self.files(helpers, containers)
+    unless onlyoffice_plugin_available?
+      return ""
+    end
+
+    user = OnlyOfficeRedmine::User.current
+
+    view = Views::Files::Index.new(helpers: helpers)
+
+    containers.each do |container|
+      container.attachments.each do |attachment|
+        block = setup_link_to_attachment(helpers, user, attachment)
+        unless block.sense?
+          next
+        end
+        view.attachments.append(block)
+      end
+    end
+
+    if view.attachments.empty?
+      return ""
+    end
+
+    if Redmine::VERSION::MAJOR == 6
+      view.view_icon = helpers.sprite_icon("edit", view.view_label)
+      view.edit_icon = helpers.sprite_icon("edit", view.edit_icon)
+      view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
+    end
+
+    view.setup_assets
+    view.inline
+  end
+
+  # ```http
+  # GET /issues/{{issue_id}}
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  #
+  # [Redmine Reference](https://github.com/redmine/redmine/blob/6.0.0/app/controllers/issues_controller.rb#L95)
+  sig { params(helpers: T.untyped, issue: ::Issue).returns(String) }
+  def self.show_issue(helpers, issue)
+    unless onlyoffice_plugin_available?
+      return ""
+    end
+
+    user = OnlyOfficeRedmine::User.current
+    container = OnlyOfficeRedmine::Issue.new(issue: issue)
+
+    view = Views::Issues::Show.new(helpers: helpers)
+
+    view.attachments = setup_link_to_attachments(helpers, user, container)
+    if view.attachments.empty?
+      return ""
+    end
+
+    if Redmine::VERSION::MAJOR == 6
+      view.view_icon = helpers.sprite_icon("edit", view.view_label)
+      view.edit_icon = helpers.sprite_icon("edit", view.edit_icon)
+      view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
+    end
+
+    view.setup_assets
+    view.inline
+  end
+
+  # ```http
+  # GET /boards/{{board_id}}/topics/{{topic_id}}
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  #
+  # [Redmine Reference](https://github.com/redmine/redmine/blob/6.0.0/app/controllers/messages_controller.rb#L37)
+  sig do
+    params(helpers: T.untyped, topic: ::Message, replies: T::Array[::Message])
+      .returns(String)
+  end
+  def self.show_topic(helpers, topic, replies)
+    unless onlyoffice_plugin_available?
+      return ""
+    end
+
+    user = OnlyOfficeRedmine::User.current
+    view = Views::Messages::Show.new(helpers: helpers)
+
+    container = OnlyOfficeRedmine::Message.new(message: topic)
+    view.attachments = setup_link_to_attachments(helpers, user, container)
+
+    replies.each do |message|
+      container = OnlyOfficeRedmine::Message.new(message: message)
+      view.attachments += setup_link_to_attachments(helpers, user, container)
+    end
+
+    if view.attachments.empty?
+      return ""
+    end
+
+    if Redmine::VERSION::MAJOR == 6
+      view.view_icon = helpers.sprite_icon("edit", view.view_label)
+      view.edit_icon = helpers.sprite_icon("edit", view.edit_icon)
+      view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
+    end
+
+    view.setup_assets
+    view.inline
+  end
+
+  # ```http
+  # GET /news/{{news_id}}
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  #
+  # [Redmine Reference](https://github.com/redmine/redmine/blob/6.0.0/app/controllers/news_controller.rb#L69)
+  sig { params(helpers: T.untyped, news: ::News).returns(String) }
+  def self.show_news(helpers, news)
+    unless onlyoffice_plugin_available?
+      return ""
+    end
+
+    user = OnlyOfficeRedmine::User.current
+    container = OnlyOfficeRedmine::News.new(news: news)
+
+    view = Views::News::Show.new(helpers: helpers)
+
+    view.attachments = setup_link_to_attachments(helpers, user, container)
+    if view.attachments.empty?
+      return ""
+    end
+
+    if Redmine::VERSION::MAJOR == 6
+      view.view_icon = helpers.sprite_icon("edit", view.view_label)
+      view.edit_icon = helpers.sprite_icon("edit", view.edit_icon)
+      view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
+    end
+
+    view.setup_assets
+    view.inline
+  end
+
+  # ```http
+  # GET /projects/{{project_id}}/wiki/{{wiki_page_title}}
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  #
+  # [Redmine Reference](https://github.com/redmine/redmine/blob/6.0.0/app/controllers/news_controller.rb#L69)
+  sig { params(helpers: T.untyped, page: ::WikiPage).returns(String) }
+  def self.show_wiki_page(helpers, page)
+    unless onlyoffice_plugin_available?
+      return ""
+    end
+
+    user = OnlyOfficeRedmine::User.current
+    container = OnlyOfficeRedmine::WikiPage.new(page: page)
+
+    view = Views::News::Show.new(helpers: helpers)
+
+    view.attachments = setup_link_to_attachments(helpers, user, container)
+    if view.attachments.empty?
+      return ""
+    end
+
+    if Redmine::VERSION::MAJOR == 6
+      view.view_icon = helpers.sprite_icon("edit", view.view_label)
+      view.edit_icon = helpers.sprite_icon("edit", view.edit_icon)
+      view.convert_icon = helpers.sprite_icon("reload", view.convert_icon)
+    end
+
+    view.setup_assets
+    view.inline
+  end
+
+  class ContainerParameters < T::Struct
+    prop :container_type, String
+    prop :container_id,   String
+  end
+
+  class AttachmentParameters < T::Struct
+    prop :attachment_id, String
+  end
+
+  class UserParameters < T::Struct
+    prop :user_id, String
+  end
+
+  include OnlyOfficeErrorHelper
+  include OnlyOfficePluginHelper::Regular
+  include OnlyOfficeJWTHelper
+  include OnlyOfficeRouterHelper
+  include OnlyOfficeSettingsHelper
+  include OnlyOfficeUserHelper
+  include OnlyOfficeViewHelper::Regular
+
+  before_action      :require_onlyoffice_plugin
+  before_action      :check_trial
+  skip_before_action :verify_authenticity_token, only: [:download, :retrieve, :callback]
+  before_action      :verify_jwt_token,          only: [:download, :callback, :blocks_source]
+  before_action      :verify_fallback_jwt_token, only: [:retrieve]
+
+  rescue_from OnlyOfficeRedmine::Error,         with: :handle_error
+  rescue_from OnlyOfficeRedmine::SettingsError, with: :handle_settings_error
+
+  def user_setup
+    super
+    case action_name
+    when "download", "retrieve", "callback"
+      resetup_user
+    else
+      # nothing
+    end
+  end
+
+  # ```http
+  # GET /onlyoffice/containers/{{container_type}}/{{container_id}}/attachments/new HTTP/1.1
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def new
+    user = OnlyOfficeRedmine::User.current
+
+    params = ContainerParameters.from_hash(request.parameters)
+    container = params.container
+    unless container
+      logger.error("The #{params.container_type} (#{params.container_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless container.addition_allowed?(user)
+      logger.error("User (#{user.id}) isn't allowed to add an attachment to the #{container.type} (#{container.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    return render_new(container)
+  end
+
+  # TODO: add additional options to create a new attachment.
+  class CreatePayload < T::Struct
+    prop :name,        String, default: ""
+    prop :description, String, default: ""
+    prop :format_name, String, name: "format"
+  end
+
+  # ```http
+  # POST /onlyoffice/containers/{{container_type}}/{{container_id}}/attachments/new HTTP/1.1
+  # Accept: text/html
+  # Content-Type: application/x-www-form-urlencoded; charset=utf-8
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def create
+    user = OnlyOfficeRedmine::User.current
+
+    params = ContainerParameters.from_hash(request.parameters)
+    container = params.container
+    unless container
+      logger.error("The #{params.container_type} (#{params.container_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless container.addition_allowed?(user)
+      logger.error("User (#{user.id}) isn't allowed to add an attachment to the #{container.type} (#{container.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    raw_payload = self.params["onlyoffice"].permit!.to_h
+    payload = CreatePayload.from_hash(raw_payload)
+
+    format = payload.format
+    unless format && format.creatable?
+      logger.error("The format (#{payload.format_name}) doesn't support creation")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    template = format.template
+    unless template
+      logger.error("The format (#{format.name}) doesn't have a template file")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    scheme = OnlyOffice::Resources::TemplatesLanguageScheme.iso639_1
+    blank = template.blank(I18n.locale.to_s, scheme)
+    file = File.binread(blank)
+
+    attachment = Attachment.create(
+      file: file,
+      author: user.internal,
+      content_type: format.content_type,
+      filename: payload.filename(format),
+      description: payload.description
+    )
+    container.attachments.append(attachment)
+    saved = container.save
+    unless saved
+      logger.error("Failed to save the #{container.type} (#{container.id}) with new attachment")
+      return render_new(container)
+    end
+
+    flash[:notice] = I18n.t("notice_successful_create")
+    home = container.home_path(helpers)
+    redirect_to(home)
+  end
+
+  class CreatePayload
+    extend T::Sig
+
+    sig { params(hash: T.untyped, strict: T.untyped).returns(CreatePayload) }
+    def self.from_hash(hash, strict = nil)
+      super(hash, strict)
+    end
+
+    sig { returns(T.nilable(OnlyOffice::Resources::Format)) }
+    def format
+      formats = OnlyOfficeRedmine::Resources::Formats.read
+      formats.all.find do |format|
+        format.name == @format_name
+      end
+    end
+
+    sig { params(format: OnlyOffice::Resources::Format).returns(String) }
+    def filename(format)
+      name =
+        if @name == ""
+          format.file_name
+        else
+          @name
+        end
+      "#{name}#{format.extension}"
+    end
+  end
+
+  sig { params(container: OnlyOfficeRedmine::Container).returns(T.untyped) }
+  def render_new(container)
+    view = Views::OnlyOffice::New.new(helpers: helpers)
+    view.error_messages = helpers.error_messages_for(*container.attachments)
+    view.name.name = "onlyoffice[name]"
+    view.description.name = "onlyoffice[description]"
+
+    formats = OnlyOfficeRedmine::Resources::Formats.read
+    view.format.name = "onlyoffice[format]"
+    view.format.options += formats.creatable.sort_by(&:order).map do |format|
+      Views::Option.new(label: format.file_name, value: format.name)
+    end
+
+    view.create.url = helpers.onlyoffice_create_attachment_url(container.type, container.id)
+    view.cancel.url = container.home_url(helpers)
+    render_view(view)
+  end
+
+  # ```http
+  # GET /onlyoffice/attachments/:attachment_id/view HTTP/1.1
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def view
+    user = OnlyOfficeRedmine::User.current
+
+    params = AttachmentParameters.from_hash(request.parameters)
+    attachment = params.attachment
+    unless attachment
+      logger.error("The attachment (#{params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.viewable?(user)
+      logger.error("User (#{user.id}) isn't allowed to view the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    editor(attachment, user, "view")
+  end
+
+  # ```http
+  # GET /onlyoffice/attachments/:attachment_id/edit HTTP/1.1
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def edit
+    user = OnlyOfficeRedmine::User.current
+
+    params = AttachmentParameters.from_hash(request.parameters)
+    attachment = params.attachment
+    unless attachment
+      logger.error("The attachment (#{params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.editable?(user) || attachment.fillable?(user)
+      logger.error("User (#{user.id}) isn't allowed to edit or fill the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    editor(attachment, user, "edit")
+  end
+
+  # ```http
+  # GET /onlyoffice/attachments/:attachment_id/blocks HTTP/1.1
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def blocks
+    user = OnlyOfficeRedmine::User.current
+
+    params = AttachmentParameters.from_hash(request.parameters)
+    attachment = params.attachment
+    unless attachment
+      logger.error("The attachment (#{params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.markdown_editable?(user)
+      logger.error("User (#{user.id}) isn't allowed to edit the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    container = attachment.container
+    unless container
+      logger.error("The container for the attachment (#{attachment.id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    settings = blocks_settings
+
+    markdown = blocks_markdown(attachment, user, settings)
+    unless markdown
+      logger.error("Failed to represent the attachment (#{attachment.id}) as Markdown")
+      raise OnlyOfficeRedmine::Error.internal
+    end
+
+    view = Views::OnlyOffice::Blocks.new(helpers: helpers)
+    view.basename = attachment.filename
+    view.content = markdown
+    view.convertible = !blocks_markdown?(attachment)
+    view.save.url = helpers.onlyoffice_save_blocks_attachment_path(attachment.id)
+    view.cancel.url = container.home_url(helpers)
+
+    render_view(view)
+  end
+
+  # ```http
+  # POST /onlyoffice/attachments/:attachment_id/blocks/save HTTP/1.1
+  # Accept: application/json
+  # Content-Type: application/json; charset=utf-8
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def blocks_save
+    user = OnlyOfficeRedmine::User.current
+
+    params = AttachmentParameters.from_hash(request.parameters)
+    attachment = params.attachment
+    unless attachment
+      logger.error("The attachment (#{params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.markdown_editable?(user)
+      logger.error("User (#{user.id}) isn't allowed to edit the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    format = attachment.format
+    unless format
+      logger.error("The format (#{attachment.extension}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    payload = BlocksPayload.from_hash(JSON.parse(request.body.read))
+
+    limit = (Integer(Setting.attachment_max_size.to_s, 10, exception: false) || 0).kilobytes
+    if limit.positive? && payload.content.bytesize > limit
+      logger.error("The content of the attachment (#{attachment.id}) is too large")
+      render(json: { error: I18n.t("onlyoffice_blocks_too_large") }, status: :payload_too_verbose)
+      return
+    end
+
+    saved =
+      if blocks_markdown?(attachment)
+        save_attachment(attachment, payload.content, format.content_type)
+      else
+        blocks_convert_and_save(attachment, format, payload.content)
+      end
+
+    unless saved
+      render(json: { error: I18n.t("onlyoffice_blocks_error") }, status: :internal_server_error)
+      return
+    end
+
+    render(json: { ok: true })
+  end
+
+  # ```http
+  # GET /onlyoffice/blocks/:pending_id/source HTTP/1.1
+  # Accept: text/markdown
+  # Host: {{plugin_internal_url}}
+  # {{jwt_http_header}}: Bearer {{jwt_token}}
+  # ```
+  def blocks_source
+    id = params["pending_id"].to_s
+
+    path = OnlyOfficeRedmine::BlockEditor.pending(id)
+    unless path
+      logger.error("The pending document (#{id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    send_file(
+      path.to_s,
+      filename: "document.md",
+      type: "text/markdown",
+      disposition: "attachment"
+    )
+  end
+
+  class BlocksPayload < T::Struct
+    extend T::Sig
+
+    prop :content, String, default: ""
+
+    sig { params(hash: T.untyped, strict: T.untyped).returns(BlocksPayload) }
+    def self.from_hash(hash, strict = nil)
+      super(hash, strict)
+    end
+  end
+
+  sig { returns(OnlyOfficeRedmine::Settings) }
+  private def blocks_settings
+    settings = OnlyOfficeRedmine::Settings.current
+    settings.plugin.url = helpers.home_url
+    if settings.trial.enabled
+      settings = settings.with_trial
+    end
+    settings
+  end
+
+  # Whether the attachment is stored as Markdown, which doesn't need to be
+  # converted before and after the editing.
+  sig { params(attachment: OnlyOfficeRedmine::Attachment).returns(T::Boolean) }
+  private def blocks_markdown?(attachment)
+    format = attachment.format
+    !format.nil? && ["md", "txt"].include?(format.name)
+  end
+
+  sig do
+    params(
+      attachment: OnlyOfficeRedmine::Attachment,
+      user: OnlyOfficeRedmine::User,
+      settings: OnlyOfficeRedmine::Settings
+    )
+      .returns(T.nilable(String))
+  end
+  private def blocks_markdown(attachment, user, settings)
+    if blocks_markdown?(attachment)
+      return attachment.text
+    end
+
+    format = attachment.format
+    unless format
+      return nil
+    end
+
+    payload = OnlyOfficeRouterHelper::AttachmentPayload.new(user_id: user.id)
+    download_url = onlyoffice_download_attachment_url(attachment.id, payload)
+    download_url = settings.plugin.resolve_internal_url(download_url)
+    if settings.fallback_jwt.enabled
+      download_url = settings.fallback_jwt.encode_url(download_url)
+    end
+
+    request = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Request.new(
+      async: true,
+      filetype: format.name,
+      key: attachment.token,
+      outputtype: "md",
+      region: I18n.locale.to_s,
+      title: "#{attachment.name}.md",
+      url: download_url
+    )
+
+    result = blocks_convert(settings, request)
+    if result.nil?
+      return nil
+    end
+
+    file_url = result.file_url
+    if file_url.nil?
+      logger.error("file_url is nil")
+      return nil
+    end
+
+    file = T.unsafe(URI(file_url)).open(ssl_verify_mode: settings.ssl.verify_mode)
+    file.read.force_encoding(Encoding::UTF_8).scrub
+  end
+
+  sig do
+    params(
+      attachment: OnlyOfficeRedmine::Attachment,
+      format: OnlyOffice::Resources::Format,
+      text: String
+    )
+      .returns(T::Boolean)
+  end
+  private def blocks_convert_and_save(attachment, format, text)
+    settings = blocks_settings
+
+    pending = OnlyOfficeRedmine::BlockEditor.store_pending(text)
+
+    begin
+      source_url = onlyoffice_blocks_source_url(pending)
+      source_url = settings.plugin.resolve_internal_url(source_url)
+      if settings.fallback_jwt.enabled
+        source_url = settings.fallback_jwt.encode_url(source_url)
+      end
+
+      request = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Request.new(
+        async: true,
+        filetype: "md",
+        key: blocks_text_key(text, format.name),
+        outputtype: format.name,
+        region: I18n.locale.to_s,
+        title: attachment.filename,
+        url: source_url
+      )
+
+      result = blocks_convert(settings, request)
+      if result.nil?
+        return false
+      end
+
+      file_url = result.file_url
+      if file_url.nil?
+        logger.error("file_url is nil")
+        return false
+      end
+
+      file = T.unsafe(URI(file_url)).open(ssl_verify_mode: settings.ssl.verify_mode)
+      save_attachment(attachment, file, format.content_type)
+    ensure
+      OnlyOfficeRedmine::BlockEditor.delete_pending(pending)
+    end
+  end
+
+  # The key of the conversion. It includes the content digest, so the Document
+  # Server doesn't return a cached result after the document has changed.
+  sig { params(text: String, output: String).returns(String) }
+  private def blocks_text_key(text, output)
+    "#{output}-#{Digest::SHA256.hexdigest(text)[0, 32]}"
+  end
+
+  sig do
+    params(
+      settings: OnlyOfficeRedmine::Settings,
+      request: T.untyped
+    )
+      .returns(T.nilable(T.untyped))
+  end
+  private def blocks_convert(settings, request)
+    client = settings.client
+
+    http = client.http
+    http.open_timeout = 5
+    http.read_timeout = settings.conversion.timeout / 1000
+
+    client = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client.new(
+      http: http,
+      base_uri: client.base_uri
+    )
+
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 60
+
+    loop do
+      result, response = client.conversion.do(request)
+
+      error = response.error
+      unless error.nil?
+        description = "Unknown error"
+        if error.is_a?(Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Error)
+          description = error.description
+        end
+
+        logger.error("The conversion failed: #{description}")
+        return nil
+      end
+
+      return result if result.end_convert
+
+      if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        logger.error("The conversion timed out")
+        return nil
+      end
+
+      sleep(0.5)
+    end
+  end
+
+  # Replaces the file of the attachment with the content.
+  sig do
+    params(
+      attachment: OnlyOfficeRedmine::Attachment,
+      content: T.untyped,
+      content_type: String
+    )
+      .returns(T::Boolean)
+  end
+  private def save_attachment(attachment, content, content_type)
+    tempfile = Tempfile.new(["onlyoffice-blocks", ".tmp"])
+    tempfile.binmode
+    if content.is_a?(String)
+      tempfile.write(content)
+    else
+      tempfile.write(content.read)
+    end
+    tempfile.rewind
+
+    # rubocop:disable Style/StringHashKeys
+    # We need a copy with an ID so that we can delete files from the disk.
+    current = attachment.copy({ "id" => attachment.id })
+    # rubocop:enable Style/StringHashKeys
+
+    internal = attachment.internal
+    internal.file = ActionDispatch::Http::UploadedFile.new(
+      tempfile: tempfile,
+      type: content_type,
+      filename: attachment.filename
+    )
+    internal.files_to_final_location
+
+    unless internal.save
+      logger.error("Failed to save the attachment (#{attachment.id})")
+      return false
+    end
+
+    current.internal.delete_from_disk
+    true
+  end
+
+  sig do
+    params(
+      attachment: OnlyOfficeRedmine::Attachment,
+      user: OnlyOfficeRedmine::User,
+      mode: String
+    )
+      .returns(T.untyped)
+  end
+  private def editor(attachment, user, mode)
+    container = attachment.container
+    unless container
+      logger.error("The container for the attachment (#{attachment.id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    format = attachment.format
+    unless format
+      logger.error("The format (#{attachment.extension}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    settings = OnlyOfficeRedmine::Settings.current
+    settings.plugin.url = helpers.home_url
+    if settings.trial.enabled
+      settings = settings.with_trial
+    end
+
+    attachment_payload = OnlyOfficeRouterHelper::AttachmentPayload.new(user_id: user.id)
+
+    download_url = onlyoffice_download_attachment_url(attachment.id, attachment_payload)
+    download_url = settings.plugin.resolve_internal_url(download_url)
+    if settings.fallback_jwt.enabled
+      download_url = settings.fallback_jwt.encode_url(download_url)
+    end
+
+    callback_url = onlyoffice_callback_attachment_url(attachment.id, attachment_payload)
+    callback_url = settings.plugin.resolve_internal_url(callback_url)
+    if settings.fallback_jwt.enabled
+      callback_url = settings.fallback_jwt.encode_url(callback_url)
+    end
+
+    retrieve_url = onlyoffice_retrieve_attachment_url(attachment.id, attachment_payload)
+    if settings.fallback_jwt.enabled
+      retrieve_url = settings.fallback_jwt.encode_url(retrieve_url)
+    end
+
+    config = Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config.new(
+      document_type: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::DocumentType.from_serialized(format.type),
+      document: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::Document.new(
+        file_type: format.name,
+        key: attachment.token,
+        title: attachment.filename,
+        url: download_url,
+        permissions: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::Document::Permissions.new(
+          chat: settings.editor.chat_enabled,
+          edit: attachment.editable?(user),
+          fill_forms: attachment.fillable?(user)
+        )
+      ),
+      editor_config: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::EditorConfig.new(
+        callback_url: callback_url,
+        lang: I18n.locale.to_s,
+        mode: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::EditorConfig::Mode.from_serialized(mode),
+        user: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::EditorConfig::User.new(
+          id: user.id.to_s,
+          name: user.name
+        ),
+        customization: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::EditorConfig::Customization.new(
+          compact_header: settings.editor.compact_header_enabled,
+          feedback: settings.editor.feedback_enabled,
+          forcesave: settings.editor.force_save_enabled,
+          goback: Onlyoffice::DocsIntegrationSdk::DocumentEditor::Config::EditorConfig::Customization::GoBack.new(
+            url: container.home_url(helpers)
+          ),
+          help: settings.editor.help_enabled,
+          toolbar_no_tabs: settings.editor.toolbar_tabs_disabled
+        )
+      )
+    )
+
+    view = Views::OnlyOffice::Editor.new(helpers: helpers)
+    view.document_server_api_base_url = settings.document_server.url
+    view.document_server_config = settings.jwt.encode_payload(config.serialize)
+    view.retrieve_url = retrieve_url
+    view.save_as_allowed = container.addition_allowed?(user)
+    view.form = format.form?
+    view.trial_enabled = settings.trial.enabled
+    view.favicon = format.favicon
+    view.basename = attachment.filename
+
+    flash[:"onlyoffice-error_not-found error hidden"] \
+      = I18n.t("onlyoffice_editor_cannot_be_reached")
+    if format.form?
+      flash[:"onlyoffice-error_forms-unsupported error hidden"] \
+        = I18n.t("onlyoffice_editor_forms_error_version")
+    end
+    if settings.trial.enabled
+      flash[:"onlyoffice-warning_trial-enabled warning hidden"] \
+        = I18n.t("onlyoffice_editor_demo_enabled")
+    end
+
+    render_view(view)
+  end
+
+  # ```http
+  # GET /onlyoffice/attachments/:attachment_id/download?user_id={{user_id}}&token={{fallback_jwt_token}} HTTP/1.1
+  # Accept: text/*
+  # Host: {{plugin_internal_url}}
+  # {{jwt_http_header}}: Bearer {{jwt_token}}
+  # ```
+  def download
+    attachment_params = AttachmentParameters.from_hash(request.parameters)
+    attachment = attachment_params.attachment
+    unless attachment
+      logger.error("The attachment (#{attachment_params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    user_params = UserParameters.from_hash(request.parameters)
+    user = user_params.user
+    unless user
+      logger.error("The user (#{user_params.user_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.viewable?(user)
+      logger.error("User (#{user.id}) isn't allowed to view the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    format = attachment.format
+    unless format
+      logger.error("The format (#{attachment.extension}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    send_file(
+      attachment.diskfile,
+      filename: attachment.filename,
+      type: format.content_type,
+      disposition: "attachment"
+    )
+  end
+
+  # ```http
+  # GET /onlyoffice/attachments/:attachment_id/convert HTTP/1.1
+  # Accept: text/html
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def convert
+    user = OnlyOfficeRedmine::User.current
+
+    params = AttachmentParameters.from_hash(request.parameters)
+    attachment = params.attachment
+    unless attachment
+      logger.error("The attachment (#{params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.convertible?(user)
+      logger.error("User (#{user.id}) isn't allowed to convert the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    container = attachment.container
+    unless container
+      logger.error("The container for the attachment (#{attachment.id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    format = attachment.format
+    unless format
+      logger.error("The format (#{attachment.extension}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    view = Views::OnlyOffice::Convert.new(helpers: helpers)
+
+    view.attachment.basename = attachment.filename
+    view.attachment.size = helpers.number_to_human_size(attachment.filesize)
+    view.attachment.author = attachment.author.internal.to_s
+    view.attachment.create_on = helpers.format_time(attachment.created_on)
+
+    view.attachment.name.name = "onlyoffice[name]"
+    view.attachment.name.value = attachment.name
+
+    view.attachment.description.name = "onlyoffice[description]"
+    view.attachment.description.value = attachment.description
+
+    view.attachment.from.name = "onlyoffice[from]"
+    view.attachment.from.value = format.name
+
+    view.attachment.to.name = "onlyoffice[to]"
+    view.attachment.to.options += attachment.convertible_to.map do |name|
+      Views::Option.new(label: name, value: name)
+    end
+
+    if container.addition_allowed?(user)
+      save = view.save || Views::Action.new
+      save.url = helpers.onlyoffice_save_as_attachment_url(attachment.id)
+      view.save = save
+    else
+      view.save = nil
+    end
+
+    view.download.url = helpers.onlyoffice_download_as_attachment_url(attachment.id)
+    view.cancel.url = container.home_url(helpers)
+
+    render_view(view)
+  end
+
+  class DoAsPayload < T::Struct
+    prop :name,        String, default: ""
+    prop :description, String, default: ""
+    prop :from_name,   String, name: "from"
+    prop :to_name,     String, name: "to"
+  end
+
+  # ```http
+  # POST /onlyoffice/attachments/:attachment_id/save-as HTTP/1.1
+  # Accept: text/html, application/json
+  # Content-Type: application/x-www-form-urlencoded; charset=utf-8
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def save_as
+    user = OnlyOfficeRedmine::User.current
+
+    params = AttachmentParameters.from_hash(request.parameters)
+    attachment = params.attachment
+    unless attachment
+      logger.error("The attachment (#{params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.viewable?(user)
+      logger.error("User (#{user.id}) isn't allowed to view the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    container = attachment.container
+    unless container
+      logger.error("The container for the attachment (#{attachment.id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless container.addition_allowed?(user)
+      logger.error("User (#{user.id}) isn't allowed to add an attachment to the #{container.type} (#{container.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    raw_payload = self.params["onlyoffice"].permit!.to_h
+    payload = DoAsPayload.from_hash(raw_payload)
+
+    from = payload.from
+    unless from
+      logger.error("The format (#{payload.from_name}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    to = payload.to
+    unless to
+      logger.error("The format (#{payload.to_name}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    settings = OnlyOfficeRedmine::Settings.current
+    settings.plugin.url = helpers.home_url
+    if settings.trial.enabled
+      settings = settings.with_trial
+    end
+
+    attachment_payload = OnlyOfficeRouterHelper::AttachmentPayload.new(user_id: user.id)
+
+    download_url = onlyoffice_download_attachment_url(attachment.id, attachment_payload)
+    download_url = settings.plugin.resolve_internal_url(download_url)
+    if settings.fallback_jwt.enabled
+      download_url = settings.fallback_jwt.encode_url(download_url)
+    end
+
+    client = settings.client
+
+    http = client.http
+    http.open_timeout = 5
+    http.read_timeout = settings.conversion.timeout / 1000
+
+    client = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client.new(
+      http: http,
+      base_uri: client.base_uri,
+    )
+
+    request = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Request.new(
+      async: true,
+      filetype: from.name,
+      key: attachment.token,
+      outputtype: to.name,
+      region: I18n.locale.to_s,
+      title: "#{payload.name}#{to.extension}",
+      url: download_url
+    )
+
+    if to.image?
+      request.thumbnail = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Request::Thumbnail.new(
+        first: false
+      )
+    end
+
+    begin
+      result, response = client.conversion.do(request)
+
+      error = response.error
+      unless error.nil?
+        description = "Unknown error"
+        if error.is_a?(Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Error)
+          description = error.description
+        end
+
+        logger.error("#{description} (#{response.response.message.code} #{response.response.message.message})")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      end_convert = result.end_convert
+      if end_convert.nil?
+        logger.error("end_convert is nil")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      unless end_convert
+        self.response.add_header("Cache-Control", "no-cache, no-store")
+        return render(json: result.serialize)
+      end
+
+      file_type = result.file_type
+      if file_type.nil?
+        logger.error("file_type is nil")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      file_url = result.file_url
+      if file_url.nil?
+        logger.error("file_url is nil")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      if file_type != to.name
+        formats = OnlyOfficeRedmine::Resources::Formats.read
+        to = formats.all.find do |format|
+          format.name == result.file_type
+        end
+
+        unless to
+          logger.error("The format (#{to}) doesn't supported")
+          raise OnlyOfficeRedmine::Error.unsupported
+        end
+      end
+
+      file_uri = URI(file_url)
+      file = T.unsafe(file_uri).open(ssl_verify_mode: settings.ssl.verify_mode)
+
+      attachment = Attachment.create(
+        file: file,
+        author: user.internal,
+        content_type: to.content_type,
+        filename: "#{payload.name}#{to.extension}",
+        description: payload.description,
+      )
+
+      container.attachments.append(attachment)
+      saved = container.save
+      unless saved
+        logger.error("Failed to save the #{container.type} (#{container.id}) with new attachment")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      flash[:notice] = I18n.t("notice_successful_create")
+    rescue OnlyOfficeRedmine::Error
+      flash[:error] = I18n.t("onlyoffice_attachment_create_error")
+    end
+
+    home = container.home_path(helpers)
+    redirect_to(home)
+  end
+
+  # ```http
+  # POST /onlyoffice/attachments/:attachment_id/download-as HTTP/1.1
+  # Accept: text/*, application/json
+  # Content-Type: application/x-www-form-urlencoded; charset=utf-8
+  # Cookie: {{cookie}}
+  # Host: {{plugin_url}}
+  # ```
+  def download_as
+    user = OnlyOfficeRedmine::User.current
+
+    params = AttachmentParameters.from_hash(request.parameters)
+    attachment = params.attachment
+    unless attachment
+      logger.error("The attachment (#{params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.viewable?(user)
+      logger.error("User (#{user.id}) isn't allowed to view the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    container = attachment.container
+    unless container
+      logger.error("The container for the attachment (#{attachment.id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    raw_payload = self.params["onlyoffice"].permit!.to_h
+    payload = DoAsPayload.from_hash(raw_payload)
+
+    from = payload.from
+    unless from
+      logger.error("The format (#{payload.from_name}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    to = payload.to
+    unless to
+      logger.error("The format (#{payload.to_name}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    settings = OnlyOfficeRedmine::Settings.current
+    settings.plugin.url = helpers.home_url
+    if settings.trial.enabled
+      settings = settings.with_trial
+    end
+
+    attachment_payload = OnlyOfficeRouterHelper::AttachmentPayload.new(user_id: user.id)
+
+    download_url = onlyoffice_download_attachment_url(attachment.id, attachment_payload)
+    download_url = settings.plugin.resolve_internal_url(download_url)
+    if settings.fallback_jwt.enabled
+      download_url = settings.fallback_jwt.encode_url(download_url)
+    end
+
+    client = settings.client
+
+    http = client.http
+    http.open_timeout = 5
+    http.read_timeout = settings.conversion.timeout / 1000
+
+    client = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client.new(
+      http: http,
+      base_uri: client.base_uri,
+    )
+
+    request = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Request.new(
+      async: true,
+      filetype: from.name,
+      key: attachment.token,
+      outputtype: to.name,
+      region: I18n.locale.to_s,
+      title: "#{payload.name}#{to.extension}",
+      url: download_url
+    )
+
+    if to.image?
+      request.thumbnail = Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Request::Thumbnail.new(
+        first: false
+      )
+    end
+
+    begin
+      result, response = client.conversion.do(request)
+
+      error = response.error
+      unless error.nil?
+        description = "Unknown error"
+        if error.is_a?(Onlyoffice::DocsIntegrationSdk::DocumentServer::Client::ConversionService::Error)
+          description = error.description
+        end
+
+        logger.error("#{description} (#{response.response.message.code} #{response.response.message.message})")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      end_convert = result.end_convert
+      if end_convert.nil?
+        logger.error("end_convert is nil")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      unless end_convert
+        self.response.add_header("Cache-Control", "no-cache, no-store")
+        return render(json: result.serialize)
+      end
+
+      file_url = result.file_url
+      if file_url.nil?
+        logger.error("file_url is nil")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      # The URL is opened by the browser, so it must point to the public address
+      # of the Document Server rather than to the internal one.
+      file_url = settings.document_server.resolve_url(file_url)
+      flash[:notice] = I18n.t("notice_successful_create")
+      return render(json: { url: file_url })
+    rescue OnlyOfficeRedmine::Error
+      flash[:error] = I18n.t("onlyoffice_attachment_create_error")
+    end
+
+    home = container.home_path(helpers)
+    redirect_to(home)
+  end
+
+  class DoAsPayload
+    extend T::Sig
+
+    sig { params(hash: T.untyped, strict: T.untyped).returns(DoAsPayload) }
+    def self.from_hash(hash, strict = nil)
+      super(hash, strict)
+    end
+
+    sig { returns(T.nilable(OnlyOffice::Resources::Format)) }
+    def to
+      formats = OnlyOfficeRedmine::Resources::Formats.read
+      formats.all.find do |format|
+        format.name == @to_name
+      end
+    end
+
+    sig { returns(T.nilable(OnlyOffice::Resources::Format)) }
+    def from
+      formats = OnlyOfficeRedmine::Resources::Formats.read
+      formats.all.find do |format|
+        format.name == @from_name
+      end
+    end
+  end
+
+  class RetrievePayload < T::Struct
+    prop :format_name, String, name: "format"
+    prop :url,         String
+  end
+
+  # ```http
+  # POST /onlyoffice/attachments/:attachment_id/retrieve?user_id={{user_id}}&token={{fallback_jwt_token}} HTTP/1.1
+  # Accept: text/html
+  # Content-Type: application/x-www-form-urlencoded; charset=utf-8
+  # Host: {{plugin_url}}
+  # ```
+  def retrieve
+    user_params = UserParameters.from_hash(request.parameters)
+    user = user_params.user
+    unless user
+      logger.error("The user (#{user_params.user_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    attachment_params = AttachmentParameters.from_hash(request.parameters)
+    attachment = attachment_params.attachment
+    unless attachment
+      logger.error("The attachment (#{attachment_params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    container = attachment.container
+    unless container
+      logger.error("The container for the attachment (#{attachment.id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless container.addition_allowed?(user)
+      logger.error("User (#{user.id}) isn't allowed to add an attachment to the #{container.type} (#{container.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    raw_payload = params["onlyoffice"].permit!.to_h
+    retrieve_params = RetrievePayload.from_hash(raw_payload)
+
+    format = retrieve_params.format
+    unless format
+      logger.error("The format (#{retrieve_params.format_name}) doesn't supported")
+      raise OnlyOfficeRedmine::Error.unsupported
+    end
+
+    settings = OnlyOfficeRedmine::Settings.current
+    settings.plugin.url = helpers.home_url
+    if settings.trial.enabled
+      settings = settings.with_trial
+    end
+
+    response = Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Response.new(error: 0)
+
+    begin
+      file_url = settings.document_server.resolve_internal_url(retrieve_params.url)
+      file_uri = URI(file_url)
+      file = T.unsafe(file_uri).open(ssl_verify_mode: settings.ssl.verify_mode)
+
+      retrieved = Attachment.create(
+        file: file,
+        author: user.internal,
+        content_type: format.content_type,
+        filename: "#{attachment.name}#{format.extension}",
+        description: attachment.description
+      )
+
+      container.attachments.append(retrieved)
+      saved = container.save
+      unless saved
+        logger.error("Failed to save the #{container.type} (#{container.id}) with new attachment")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      response.message = I18n.t("notice_successful_create")
+    rescue OnlyOfficeRedmine::Error
+      response.message = I18n.t("onlyoffice_attachment_create_error")
+    end
+
+    render(json: response.serialize)
+  end
+
+  class RetrievePayload
+    extend T::Sig
+
+    sig { params(hash: T.untyped, strict: T.untyped).returns(RetrievePayload) }
+    def self.from_hash(hash, strict = nil)
+      super(hash, strict)
+    end
+
+    sig { returns(T.nilable(OnlyOffice::Resources::Format)) }
+    def format
+      formats = OnlyOfficeRedmine::Resources::Formats.read
+      formats.all.find do |format|
+        format.name == @format_name
+      end
+    end
+  end
+
+  # ```http
+  # POST /onlyoffice/attachments/{{attachment_id}}/callback?user_id={{user_id}}&token={{fallback_jwt_token}} HTTP/1.1
+  # Accept: application/json
+  # Content-Type: application/json; charset=utf-8
+  # Host: {{plugin_internal_url}}
+  # {{jwt_http_header}}: Bearer {{jwt_token}}
+  # ```
+  def callback
+    attachment_params = AttachmentParameters.from_hash(request.parameters)
+    attachment = attachment_params.attachment
+    unless attachment
+      logger.error("The attachment (#{attachment_params.attachment_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.readable?
+      logger.error("The attachment (#{attachment.id}) is unreadable")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    user_params = UserParameters.from_hash(request.parameters)
+    user = user_params.user
+    unless user
+      logger.error("The user (#{user_params.user_id}) couldn't be found")
+      raise OnlyOfficeRedmine::Error.not_found
+    end
+
+    unless attachment.editable?(user) || attachment.fillable?(user)
+      logger.error("User (#{user.id}) isn't allowed to edit or fill the attachment (#{attachment.id})")
+      raise OnlyOfficeRedmine::Error.forbidden
+    end
+
+    callback_json = request.body.read
+    callback_hash = JSON.parse(callback_json)
+    callback = T.cast(
+      Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request.from_hash(callback_hash),
+      Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request
+    )
+
+    begin
+      status = callback.status
+      if status.nil?
+        logger.error("status is nil")
+        raise OnlyOfficeRedmine::Error.internal
+      end
+
+      # rubocop:disable Lint/DuplicateBranch
+      case status
+      when Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request::Status::Editing
+        logger.info(status.description)
+      when Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request::Status::Save
+        logger.info(status.description)
+
+        settings = OnlyOfficeRedmine::Settings.current
+        settings.plugin.url = helpers.home_url
+        if settings.trial.enabled
+          settings = settings.with_trial
+        end
+
+        url = callback.url
+        if url.nil?
+          logger.error("url is nil")
+          raise OnlyOfficeRedmine::Error.internal
+        end
+
+        url = settings.document_server.resolve_internal_url(url)
+        uri = URI(url)
+
+        tempfile = T.unsafe(uri).open(ssl_verify_mode: settings.ssl.verify_mode)
+        unless tempfile
+          logger.error("Failed to download file (#{url}) to save")
+          raise OnlyOfficeRedmine::Error.internal
+        end
+
+        # rubocop:disable Style/StringHashKeys
+        # We need a copy with an ID so that we can delete files from the disk.
+        current = attachment.copy({ "id" => attachment.id })
+        # rubocop:enable Style/StringHashKeys
+
+        attachment.file = ActionDispatch::Http::UploadedFile.new(
+          tempfile: tempfile,
+          type: attachment.content_type,
+          filename: attachment.filename
+        )
+        attachment.files_to_final_location
+
+        saved = attachment.save
+        unless saved
+          logger.error("Failed to save attachment (#{url})")
+          raise OnlyOfficeRedmine::Error.internal
+        end
+
+        current.delete_from_disk
+      when Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request::Status::SaveError
+        logger.error(status.description)
+        raise OnlyOfficeRedmine::Error.internal
+      when Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request::Status::Closed
+        logger.info(status.description)
+      when Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request::Status::ForceSave
+        logger.info(status.description)
+      when Onlyoffice::DocsIntegrationSdk::DocumentStorage::Callback::Request::Status::ForceSaveError
+        logger.error(status.description)
+        raise OnlyOfficeRedmine::Error.internal
+      else
+        # nothing
+      end
+      # rubocop:enable Lint/DuplicateBranch
+    rescue OnlyOfficeRedmine::Error => e
+      description = "Unknown status"
+
+      status = callback.status
+      unless status.nil?
+        description = status.description
+      end
+
+      callback_error = OnlyOffice::APP::CallbackError.new(
+        error: 1,
+        message: "#{e.message}: #{description}"
+      )
+      return render(json: callback_error.serialize)
+    end
+
+    render(json: OnlyOffice::APP::CallbackError.no_error.serialize)
+  end
+
+  class ContainerParameters
+    extend T::Sig
+
+    sig do
+      params(hash: T.untyped, strict: T.untyped)
+        .returns(ContainerParameters)
+    end
+    def self.from_hash(hash, strict = nil)
+      super(hash, strict)
+    end
+
+    sig { returns(T.nilable(OnlyOfficeRedmine::Container)) }
+    def container
+      OnlyOfficeRedmine::GenericContainer.find(@container_id, @container_type)
+    end
+  end
+
+  class AttachmentParameters
+    extend T::Sig
+
+    sig do
+      params(hash: T.untyped, strict: T.untyped)
+        .returns(AttachmentParameters)
+    end
+    def self.from_hash(hash, strict = nil)
+      super(hash, strict)
+    end
+
+    sig { returns(T.nilable(OnlyOfficeRedmine::Attachment)) }
+    def attachment
+      id = Integer(@attachment_id, 10)
+      OnlyOfficeRedmine::Attachment.find(id)
+    end
+  end
+
+  class UserParameters
+    extend T::Sig
+
+    sig { params(hash: T.untyped, strict: T.untyped).returns(UserParameters) }
+    def self.from_hash(hash, strict = nil)
+      super(hash, strict)
+    end
+
+    sig { returns(T.nilable(OnlyOfficeRedmine::User)) }
+    def user
+      id = Integer(@user_id, 10)
+      OnlyOfficeRedmine::User.find(id)
+    end
+  end
+end

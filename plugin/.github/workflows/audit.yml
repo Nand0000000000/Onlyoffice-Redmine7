@@ -1,0 +1,40 @@
+name: Audit
+
+on:
+  pull_request:
+    branches:
+    - master
+    - develop
+  push:
+    branches:
+    - master
+    - develop
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Persist Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          bin
+          sorbet
+        key: deps
+
+    - name: Setup mise
+      uses: jdx/mise-action@v2
+
+    - name: Update Submodules
+      run: make submodule
+
+    - name: Install Dependencies
+      run: make install
+
+    - name: Run Linting
+      run: make lint

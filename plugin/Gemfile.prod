@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+gem "mustache"
+gem "onlyoffice-docs_integration_sdk"
+gem "render_parent"
+gem "sorbet-runtime"

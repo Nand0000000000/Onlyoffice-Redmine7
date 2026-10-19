@@ -1,0 +1,673 @@
+/*
+(c) Copyright Ascensio System SIA 2025
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/* Icon */
+
+.onlyoffice-icon {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+/* Redmine 7 no longer gives a size to the ".icon-only" links, so the icon of
+   an empty link has to be sized here. */
+.onlyoffice-icon:empty {
+  display: inline-block;
+  height: 16px;
+  vertical-align: middle;
+  width: 16px;
+}
+
+/* The links which have a label keep the icon on the left of the text. */
+.onlyoffice-icon:not(:empty) {
+  background-position: 9px center;
+  padding-inline-start: 29px;
+}
+
+.onlyoffice-icon__view {
+  background-image: url("../images/actions/view.svg");
+}
+
+.onlyoffice-icon__edit {
+  background-image: url("../images/actions/edit.svg");
+}
+
+.onlyoffice-icon__convert {
+  background-image: url("../images/actions/convert.svg");
+}
+
+/* Diagram */
+
+.onlyoffice-diagram {
+  border: 1px solid #E4E4E4;
+  border-radius: 4px;
+  margin: 16px 0;
+  overflow: auto;
+  padding: 16px;
+  text-align: center;
+}
+
+.onlyoffice-diagram .mermaid {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.onlyoffice-diagram .mermaid svg {
+  height: auto;
+  max-width: 100%;
+}
+
+.onlyoffice-diagram__source {
+  text-align: left;
+}
+
+.onlyoffice-diagram__source > summary {
+  color: #555F65;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 8px 0 0;
+}
+
+.onlyoffice-diagram__source > pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+/* Mermaid diagrams embedded in the contents, for example the code fences of
+   the Markdown contents. [Local Reference](../javascripts/mermaid-lazy.js) */
+
+.onlyoffice-mermaid {
+  border: 1px solid #E4E4E4;
+  border-radius: 4px;
+  margin: 16px 0;
+  overflow: auto;
+  padding: 16px;
+  text-align: center;
+}
+
+.onlyoffice-mermaid .mermaid {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.onlyoffice-mermaid .mermaid svg {
+  height: auto;
+  max-width: 100%;
+}
+
+.onlyoffice-mermaid__source {
+  border-top: 1px solid #E4E4E4;
+  margin-top: 12px;
+  padding-top: 8px;
+  text-align: left;
+}
+
+.onlyoffice-mermaid__source > summary {
+  color: #555F65;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.onlyoffice-mermaid__source > pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+/* Documents Show */
+
+.controller-documents.action-show .onlyoffice-new {
+  margin-left: 10px;
+}
+
+/* OnlyOffice Editor */
+
+.controller-only_office_attachments:not([data-editor-error]).action-view #content,
+.controller-only_office_attachments:not([data-editor-error]).action-edit #content {
+  padding: 0;
+}
+
+.onlyoffice-editor {
+  height: 100%;
+  width: 100%;
+}
+
+.onlyoffice-editor iframe {
+  position: relative !important;
+}
+
+/* Settings Plugin */
+
+.onlyoffice-settings {
+  column-gap: 32px;
+  display: grid;
+}
+
+@media screen and (min-width: 0px) and (max-width: 1089px) {
+  .onlyoffice-settings {
+    display: block;
+  }
+}
+
+.onlyoffice-settings div.settings {
+  margin-bottom: 1em;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.onlyoffice-settings fieldset.settings {
+  margin-bottom: 1em;
+  padding: 1em;
+}
+
+.onlyoffice-settings fieldset legend + p {
+  margin-top: 0;
+}
+
+.onlyoffice-settings input[type="text"] {
+  max-width: calc(100% - 4px);
+  width: 100%;
+}
+
+.onlyoffice-settings__main {
+  gird-column: 1;
+  grid-row: 1;
+}
+
+.onlyoffice-settings__advanced {
+  gird-column: 1;
+  grid-row: 2;
+}
+
+.onlyoffice-settings__security {
+  gird-column: 1;
+  grid-row: 3;
+}
+
+.onlyoffice-settings__editor {
+  gird-column: 1;
+  grid-row: 4;
+}
+
+.onlyoffice-settings__formats {
+  grid-column: 1;
+  grid-row: 5;
+}
+
+.onlyoffice-editable__controls {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 1em;
+}
+
+.onlyoffice-editable__control {
+  min-width: 80px;
+}
+
+.onlyoffice-settings__banner {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+@media screen and (min-width: 0px) and (max-width: 1089px) {
+  .onlyoffice-settings__banner {
+    margin-bottom: 1em;
+  }
+}
+
+/* Banner */
+
+.onlyoffice-banner {
+  background-color: #FFFFFF;
+  border-radius: 3px;
+  border: 1px solid #E4E4E4;
+  box-sizing: border-box;
+  display: flex;
+  max-width: 269px;
+  overflow: hidden;
+  position: relative;
+}
+
+.onlyoffice-banner::before {
+  background-image: url(../images/banner/background.svg);
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: "";
+  height: 108%;
+  left: -2%;
+  position: absolute;
+  top: -2%;
+  width: 104%;
+}
+
+.onlyoffice-banner__inner {
+  display: grid;
+  gap: 10px 13px;
+  grid-template-columns: min-content 1fr;
+  padding: 10px 16px 16px 16px;
+  z-index: 1;
+}
+
+.onlyoffice-banner__logo {
+  background-image: url(../images/banner/logo.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  grid-column: 1;
+  grid-row: 1;
+  height: 65px;
+  width: 65px;
+}
+
+.onlyoffice-banner__heading {
+  align-self: end;
+  border: none;
+  color: #505050;
+  font-family: Verdana, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  padding: 0 30px 0 0;
+}
+
+.onlyoffice-banner__description {
+  color: #555F65;
+  font-size: 12px;
+  grid-column: 1 / span 2;
+  grid-row: 2;
+  margin: 0;
+}
+
+.onlyoffice-banner-go {
+  color: #505050;
+  font-size: 13px;
+  font-weight: 700;
+  grid-column: 1 / span 2;
+  grid-row: 3;
+}
+
+.onlyoffice-banner-go:link,
+.onlyoffice-banner-go:visited {
+  color: #505050;
+}
+
+.onlyoffice-banner-go:active,
+.onlyoffice-banner-go:focus-visible,
+.onlyoffice-banner-go:hover {
+  color: #505050;
+  text-decoration: none;
+}
+
+.onlyoffice-banner-go__contents {
+  border-bottom: 1px dashed #505050;
+}
+
+.onlyoffice-banner-go:focus-visible > .onlyoffice-banner-go__contents,
+.onlyoffice-banner-go:hover > .onlyoffice-banner-go__contents {
+  border-bottom: none;
+}
+
+.onlyoffice-banner-go__pointer {
+  fill: #505050;
+  margin-left: 6px;
+}
+
+/* Block Editor */
+
+.onlyoffice-blocks {
+  margin: 0 auto;
+  max-width: 860px;
+  padding: 8px 0 48px;
+}
+
+.onlyoffice-blocks__header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 12px;
+}
+
+.onlyoffice-blocks__title {
+  color: #505050;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.onlyoffice-blocks__actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.onlyoffice-blocks__status {
+  color: #555F65;
+  font-size: 12px;
+}
+
+.onlyoffice-blocks__status--error {
+  color: #B00020;
+}
+
+.onlyoffice-blocks__button {
+  background: #505050;
+  border: 1px solid #505050;
+  border-radius: 4px;
+  color: #FFFFFF;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 6px 14px;
+  text-decoration: none;
+}
+
+.onlyoffice-blocks__button:link,
+.onlyoffice-blocks__button:visited,
+.onlyoffice-blocks__button:hover {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+.onlyoffice-blocks__button:hover {
+  background: #3F3F3F;
+}
+
+.onlyoffice-blocks__button--secondary {
+  background: #FFFFFF;
+  border-color: #D0D4D7;
+  color: #505050;
+}
+
+.onlyoffice-blocks__button--secondary:link,
+.onlyoffice-blocks__button--secondary:visited,
+.onlyoffice-blocks__button--secondary:hover {
+  color: #505050;
+}
+
+.onlyoffice-blocks__button--secondary:hover {
+  background: #F2F4F5;
+}
+
+.onlyoffice-blocks__warning {
+  background: #FFF8E1;
+  border: 1px solid #F0E0A8;
+  border-radius: 4px;
+  color: #6B5900;
+  font-size: 13px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+}
+
+.onlyoffice-blocks__toolbar {
+  background: #FFFFFF;
+  border-bottom: 1px solid #E4E4E4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.onlyoffice-blocks__group {
+  border-right: 1px solid #E4E4E4;
+  display: flex;
+  gap: 2px;
+  padding-right: 8px;
+}
+
+.onlyoffice-blocks__group:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.onlyoffice-blocks__tool {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #505050;
+  cursor: pointer;
+  font-size: 13px;
+  min-width: 28px;
+  padding: 4px 6px;
+}
+
+.onlyoffice-blocks__tool:focus-visible,
+.onlyoffice-blocks__tool:hover {
+  background: #F2F4F5;
+}
+
+.onlyoffice-blocks__surface {
+  padding-top: 16px;
+}
+
+.onlyoffice-blocks__block {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.onlyoffice-blocks__block--dragging {
+  opacity: 0.4;
+}
+
+.onlyoffice-blocks__block--over {
+  box-shadow: 0 -2px 0 #1C8CE3;
+}
+
+.onlyoffice-blocks__handle {
+  background: none;
+  border: none;
+  color: #C4C9CC;
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0;
+  padding: 0 2px;
+}
+
+.onlyoffice-blocks__block:focus-within > .onlyoffice-blocks__handle,
+.onlyoffice-blocks__block:hover > .onlyoffice-blocks__handle,
+.onlyoffice-blocks__handle:focus-visible {
+  opacity: 1;
+}
+
+.onlyoffice-blocks__body {
+  color: #303030;
+  flex: 1;
+  line-height: 1.6;
+  min-width: 0;
+  outline: none;
+  overflow-wrap: break-word;
+}
+
+.onlyoffice-blocks__body:empty::before {
+  color: #A0A6AA;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.onlyoffice-blocks__block[data-type='heading1'] .onlyoffice-blocks__body {
+  color: #303030;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 12px 0 4px;
+}
+
+.onlyoffice-blocks__block[data-type='heading2'] .onlyoffice-blocks__body {
+  color: #303030;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 8px 0 2px;
+}
+
+.onlyoffice-blocks__block[data-type='heading3'] .onlyoffice-blocks__body {
+  color: #303030;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.onlyoffice-blocks__block[data-type='quote'] .onlyoffice-blocks__body {
+  border-left: 3px solid #D0D4D7;
+  color: #555F65;
+  padding-left: 12px;
+}
+
+.onlyoffice-blocks__block[data-type='quote'] .onlyoffice-blocks__body {
+  color: #555F65;
+}
+
+.onlyoffice-blocks__block--checked .onlyoffice-blocks__body {
+  color: #9AA0A4;
+  text-decoration: line-through;
+}
+
+.onlyoffice-blocks__checkbox {
+  margin-top: 7px;
+}
+
+.onlyoffice-blocks__marker {
+  color: #555F65;
+  line-height: 1.6;
+  min-width: 14px;
+  text-align: right;
+}
+
+.onlyoffice-blocks__code {
+  background: #F6F7F8;
+  border-radius: 4px;
+  font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  padding: 8px 12px;
+  white-space: pre-wrap;
+}
+
+.onlyoffice-blocks__divider {
+  border: none;
+  border-top: 1px solid #E4E4E4;
+  flex: 1;
+  margin: 12px 0;
+}
+
+.onlyoffice-blocks__diagram {
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #E4E4E4;
+  border-radius: 4px;
+  display: flex;
+  flex-basis: 100%;
+  justify-content: center;
+  margin: 4px 0 4px 26px;
+  min-height: 40px;
+  overflow-x: auto;
+  padding: 8px;
+  position: relative;
+}
+
+.onlyoffice-blocks__diagram--hidden .onlyoffice-blocks__diagram-canvas {
+  display: none;
+}
+
+.onlyoffice-blocks__diagram-canvas {
+  max-width: 100%;
+}
+
+.onlyoffice-blocks__diagram svg {
+  height: auto;
+  max-width: 100%;
+}
+
+.onlyoffice-blocks__diagram-toggle {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #9AA0A4;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+}
+
+.onlyoffice-blocks__diagram-toggle:focus-visible,
+.onlyoffice-blocks__diagram-toggle:hover {
+  background: #F2F4F5;
+  color: #505050;
+}
+
+.onlyoffice-blocks__slash {
+  background: #FFFFFF;
+  border: 1px solid #D0D4D7;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  max-height: 280px;
+  min-width: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  position: fixed;
+  z-index: 100;
+}
+
+.onlyoffice-blocks__slash-item {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #303030;
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  padding: 6px 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.onlyoffice-blocks__slash-item--active,
+.onlyoffice-blocks__slash-item:hover {
+  background: #F2F4F5;
+}
+
+.onlyoffice-blocks__slash-icon {
+  color: #555F65;
+  flex: 0 0 24px;
+  text-align: center;
+}
+
+.onlyoffice-blocks__slash-label {
+  flex: 1;
+}
+
+.onlyoffice-blocks__slash-hint {
+  color: #A0A6AA;
+  font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 11px;
+}
+
+.onlyoffice-blocks__slash-empty {
+  color: #A0A6AA;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
