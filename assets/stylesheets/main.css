@@ -510,3 +510,58 @@ limitations under the License.
   margin: 12px 0;
 }
 
+.onlyoffice-blocks__slash {
+  background: #FFFFFF;
+  border: 1px solid #D0D4D7;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  max-height: 280px;
+  min-width: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  position: fixed;
+  z-index: 100;
+}
+
+.onlyoffice-blocks__slash-item {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: #303030;
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  padding: 6px 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.onlyoffice-blocks__slash-item--active,
+.onlyoffice-blocks__slash-item:hover {
+  background: #F2F4F5;
+}
+
+.onlyoffice-blocks__slash-icon {
+  color: #555F65;
+  flex: 0 0 24px;
+  text-align: center;
+}
+
+.onlyoffice-blocks__slash-label {
+  flex: 1;
+}
+
+.onlyoffice-blocks__slash-hint {
+  color: #A0A6AA;
+  font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 11px;
+}
+
+.onlyoffice-blocks__slash-empty {
+  color: #A0A6AA;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+

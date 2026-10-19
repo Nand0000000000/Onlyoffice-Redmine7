@@ -45,6 +45,15 @@
    */
 
   /**
+   * @typedef {Object} SlashItem
+   * @property {string} type
+   * @property {string} label
+   * @property {string} icon
+   * @property {string} hint
+   * @property {Array<string>} aliases
+   */
+
+  /**
    * The state of the editor.
    */
   const State = {
@@ -58,6 +67,17 @@
     status: null,
     /** @type {HTMLTextAreaElement | null} */
     source: null,
+    /** @type {HTMLElement | null} */
+    slash: null,
+    /** @type {{ block: HTMLElement | null, body: HTMLElement | null, items: Array<SlashItem>, index: number, query: string, start: number }} */
+    slashState: {
+      block: null,
+      body: null,
+      items: [],
+      index: 0,
+      query: "",
+      start: 0
+    },
     /** @type {string} */
     saveUrl: "",
     /** @type {Labels} */
@@ -104,6 +124,7 @@
     render(parse(State.source.value))
     setupToolbar()
     setupEditing()
+    setupSlashMenu()
     setupSaving()
   }
 
@@ -670,6 +691,7 @@
       applyShortcut(block, body)
     }
 
+    updateSlashMenu()
     markModified()
   }
 
@@ -801,7 +823,7 @@
   /**
    * @param {HTMLElement} block
    * @param {string} type
-   * @returns {void}
+   * @returns {HTMLElement} The block which replaced the given one.
    */
   function changeType(block, type) {
     const body = /** @type {HTMLElement | null} */ (
@@ -827,6 +849,8 @@
     markModified()
 
     if (replacementBody) placeCaretAtEnd(replacementBody)
+
+    return replacement
   }
 
   /* ------------------------------------------------------------------ */
@@ -923,6 +947,461 @@
     updated.selectNodeContents(element)
     selection.removeAllRanges()
     selection.addRange(updated)
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Slash menu                                                          */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * The block types offered by the slash menu, in the order they are shown.
+   *
+   * @type {Array<SlashItem>}
+   */
+  const SlashTypes = [
+    {
+      type: "paragraph",
+      label: "Text",
+      icon: "¶",
+      hint: "",
+      aliases: ["text", "paragraph", "plain"]
+    },
+    {
+      type: "heading1",
+      label: "Heading 1",
+      icon: "H1",
+      hint: "#",
+      aliases: ["h1", "heading1", "title"]
+    },
+    {
+      type: "heading2",
+      label: "Heading 2",
+      icon: "H2",
+      hint: "##",
+      aliases: ["h2", "heading2", "subtitle"]
+    },
+    {
+      type: "heading3",
+      label: "Heading 3",
+      icon: "H3",
+      hint: "###",
+      aliases: ["h3", "heading3"]
+    },
+    {
+      type: "bulleted",
+      label: "Bulleted list",
+      icon: "•",
+      hint: "-",
+      aliases: ["bullet", "bulleted", "list", "ul"]
+    },
+    {
+      type: "numbered",
+      label: "Numbered list",
+      icon: "1.",
+      hint: "1.",
+      aliases: ["number", "numbered", "ordered", "ol"]
+    },
+    {
+      type: "todo",
+      label: "To-do list",
+      icon: "☑",
+      hint: "- [ ]",
+      aliases: ["todo", "task", "check", "checkbox"]
+    },
+    {
+      type: "quote",
+      label: "Quote",
+      icon: "❝",
+      hint: ">",
+      aliases: ["quote", "blockquote", "citation"]
+    },
+    {
+      type: "code",
+      label: "Code block",
+      icon: "{ }",
+      hint: "```",
+      aliases: ["code", "pre", "snippet"]
+    },
+    {
+      type: "divider",
+      label: "Divider",
+      icon: "—",
+      hint: "---",
+      aliases: ["divider", "hr", "line", "separator"]
+    }
+  ]
+
+  /**
+   * Wires the slash menu.
+   *
+   * @returns {void}
+   */
+  function setupSlashMenu() {
+    const menu = ensureSlashMenu()
+
+    // The menu must not steal the focus from the document.
+    document.addEventListener("mousedown", (event) => {
+      if (!(event.target instanceof Element)) return
+      if (!isSlashMenuOpen()) return
+      if (menu.contains(event.target)) {
+        event.preventDefault()
+        return
+      }
+      if (!event.target.closest(".onlyoffice-blocks__body")) {
+        closeSlashMenu()
+      }
+    })
+
+    menu.addEventListener("click", (event) => {
+      if (!(event.target instanceof Element)) return
+
+      const button = event.target.closest(".onlyoffice-blocks__slash-item")
+      if (!(button instanceof HTMLElement)) return
+
+      const index = Number(button.dataset.index || "-1")
+      if (index < 0) return
+
+      State.slashState.index = index
+      applySlash()
+    })
+
+    // The keys must be handled before the editor sees them, so the menu can
+    // take over Enter and the arrows.
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (!isSlashMenuOpen()) return
+        if (event.key === "Escape") {
+          event.preventDefault()
+          event.stopPropagation()
+          closeSlashMenu()
+          return
+        }
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault()
+          event.stopPropagation()
+          moveSlash(event.key === "ArrowDown" ? 1 : -1)
+          return
+        }
+        if (event.key === "Enter" || event.key === "Tab") {
+          event.preventDefault()
+          event.stopPropagation()
+          applySlash()
+        }
+      },
+      true
+    )
+
+    window.addEventListener("resize", closeSlashMenu)
+    window.addEventListener("scroll", closeSlashMenu, true)
+  }
+
+  /**
+   * @returns {HTMLElement}
+   */
+  function ensureSlashMenu() {
+    if (State.slash) return State.slash
+
+    const menu = document.createElement("div")
+    menu.className = "onlyoffice-blocks__slash"
+    menu.hidden = true
+    menu.setAttribute("role", "listbox")
+    document.body.appendChild(menu)
+
+    State.slash = menu
+    return menu
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  function isSlashMenuOpen() {
+    return State.slash !== null && !State.slash.hidden
+  }
+
+  /**
+   * Updates the menu after the content of a block has changed.
+   *
+   * @returns {void}
+   */
+  function updateSlashMenu() {
+    const context = slashContext()
+    if (!context) {
+      closeSlashMenu()
+      return
+    }
+
+    openSlashMenu(context)
+  }
+
+  /**
+   * Looks for a `/query` right before the caret.
+   *
+   * The menu is not offered in the blocks whose content is literal, such as
+   * the code blocks, because a slash there is a part of the code.
+   *
+   * @returns {{ block: HTMLElement, body: HTMLElement, query: string, start: number } | null}
+   */
+  function slashContext() {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return null
+
+    const range = selection.getRangeAt(0)
+    if (!range.collapsed) return null
+
+    const node = range.startContainer
+    const element = node instanceof Element ? node : node.parentElement
+    if (!element) return null
+
+    const body = targetBody(element)
+    if (!body) return null
+
+    const block = blockOf(body)
+    if (!block) return null
+    if (["code", "raw", "divider"].includes(block.dataset.type || "")) return null
+
+    const before = range.cloneRange()
+    before.selectNodeContents(body)
+    before.setEnd(range.startContainer, range.startOffset)
+
+    const text = before.toString()
+    const match = /(?:^|\s)\/([^\s/]*)$/.exec(text)
+    if (!match) return null
+
+    return {
+      block,
+      body,
+      query: match[1].toLowerCase(),
+      start: text.length - match[1].length - 1
+    }
+  }
+
+  /**
+   * @param {string} query
+   * @returns {Array<SlashItem>}
+   */
+  function filterSlashTypes(query) {
+    if (query === "") return SlashTypes.slice()
+
+    return SlashTypes.filter((item) => {
+      const words = [item.label.toLowerCase(), item.type, ...item.aliases]
+      return words.some((word) => word.includes(query))
+    })
+  }
+
+  /**
+   * @param {{ block: HTMLElement, body: HTMLElement, query: string, start: number }} context
+   * @returns {void}
+   */
+  function openSlashMenu(context) {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const menu = ensureSlashMenu()
+    const caret = selection.getRangeAt(0)
+    const previous = State.slashState.query
+
+    State.slashState.block = context.block
+    State.slashState.body = context.body
+    State.slashState.query = context.query
+    State.slashState.start = context.start
+    State.slashState.items = filterSlashTypes(context.query)
+
+    if (previous !== context.query) {
+      State.slashState.index = 0
+    }
+    if (State.slashState.index >= State.slashState.items.length) {
+      State.slashState.index = 0
+    }
+
+    renderSlashMenu()
+    menu.hidden = false
+    positionSlashMenu(menu, context.block, caret)
+  }
+
+  /**
+   * @param {HTMLElement} menu
+   * @param {HTMLElement} block
+   * @param {Range} caret
+   * @returns {void}
+   */
+  function positionSlashMenu(menu, block, caret) {
+    let rect = caret.getBoundingClientRect()
+
+    // The caret of an empty block has no size, so the block is used instead.
+    if (rect.width === 0 && rect.height === 0) {
+      rect = block.getBoundingClientRect()
+    }
+
+    const width = menu.offsetWidth
+    const height = menu.offsetHeight
+
+    let left = rect.left
+    let top = rect.bottom + 4
+
+    if (left + width > window.innerWidth - 8) {
+      left = window.innerWidth - width - 8
+    }
+
+    if (top + height > window.innerHeight - 8) {
+      top = rect.top - height - 4
+    }
+
+    menu.style.left = `${Math.max(8, Math.round(left))}px`
+    menu.style.top = `${Math.max(8, Math.round(top))}px`
+  }
+
+  /**
+   * @returns {void}
+   */
+  function renderSlashMenu() {
+    const menu = State.slash
+    if (!menu) return
+
+    menu.textContent = ""
+
+    if (State.slashState.items.length === 0) {
+      const empty = document.createElement("div")
+      empty.className = "onlyoffice-blocks__slash-empty"
+      empty.textContent = "No results"
+      menu.appendChild(empty)
+      return
+    }
+
+    State.slashState.items.forEach((item, index) => {
+      const button = document.createElement("button")
+      button.type = "button"
+      button.className = "onlyoffice-blocks__slash-item"
+      if (index === State.slashState.index) {
+        button.classList.add("onlyoffice-blocks__slash-item--active")
+      }
+      button.dataset.index = String(index)
+
+      const icon = document.createElement("span")
+      icon.className = "onlyoffice-blocks__slash-icon"
+      icon.textContent = item.icon
+
+      const label = document.createElement("span")
+      label.className = "onlyoffice-blocks__slash-label"
+      label.textContent = item.label
+
+      const hint = document.createElement("span")
+      hint.className = "onlyoffice-blocks__slash-hint"
+      hint.textContent = item.hint
+
+      button.append(icon, label, hint)
+      menu.appendChild(button)
+    })
+  }
+
+  /**
+   * @param {number} delta
+   * @returns {void}
+   */
+  function moveSlash(delta) {
+    const count = State.slashState.items.length
+    if (count === 0) return
+
+    State.slashState.index = (State.slashState.index + delta + count) % count
+    renderSlashMenu()
+
+    const active = State.slash
+      ? State.slash.querySelector(".onlyoffice-blocks__slash-item--active")
+      : null
+    if (active instanceof HTMLElement) {
+      active.scrollIntoView({ block: "nearest" })
+    }
+  }
+
+  /**
+   * Replaces the `/query` with the selected block type.
+   *
+   * @returns {void}
+   */
+  function applySlash() {
+    const state = State.slashState
+    const item = state.items[state.index]
+    const block = state.block
+    const body = state.body
+
+    if (!item || !block || !body) return
+
+    removeSlashQuery(body, state.start)
+    closeSlashMenu()
+
+    const replacement = changeType(block, item.type)
+
+    // A divider has no content, so the caret is moved to the next paragraph.
+    if (item.type === "divider") {
+      const next = renderBlock({ type: "paragraph", text: "" }, 1)
+      replacement.after(next)
+
+      const nextBody = /** @type {HTMLElement | null} */ (
+        next.querySelector(".onlyoffice-blocks__body")
+      )
+      if (nextBody) placeCaretAtEnd(nextBody)
+    }
+  }
+
+  /**
+   * @param {HTMLElement} body
+   * @param {number} start
+   * @returns {void}
+   */
+  function removeSlashQuery(body, start) {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const caret = selection.getRangeAt(0)
+    if (!caret.collapsed || !body.contains(caret.startContainer)) return
+
+    const position = textPosition(body, start)
+    if (!position) return
+
+    const range = document.createRange()
+    range.setStart(position.node, position.offset)
+    range.setEnd(caret.startContainer, caret.startOffset)
+    range.deleteContents()
+
+    body.focus()
+  }
+
+  /**
+   * @param {HTMLElement} root
+   * @param {number} index
+   * @returns {{ node: Node, offset: number } | null}
+   */
+  function textPosition(root, index) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    let consumed = 0
+
+    while (walker.nextNode()) {
+      const node = walker.currentNode
+      const length = node.textContent ? node.textContent.length : 0
+      if (consumed + length >= index) {
+        return { node, offset: index - consumed }
+      }
+      consumed += length
+    }
+
+    return null
+  }
+
+  /**
+   * @returns {void}
+   */
+  function closeSlashMenu() {
+    if (!State.slash) return
+
+    State.slash.hidden = true
+    State.slash.textContent = ""
+
+    State.slashState.block = null
+    State.slashState.body = null
+    State.slashState.items = []
+    State.slashState.index = 0
+    State.slashState.query = ""
+    State.slashState.start = 0
   }
 
   /* ------------------------------------------------------------------ */
